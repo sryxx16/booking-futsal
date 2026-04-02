@@ -1,7 +1,7 @@
 <nav class="flex flex-wrap items-center justify-between p-3 bg-[#e8e8e5]">
     <div class="flex items-center">
         <img src="/assets/img/futsal.png" alt="Logo" class="h-10 mr-3">
-        <div class="text-xl">Jananumas Futsal</div>
+        <div class="text-xl">faranza Futsal</div>
     </div>
     <div class="flex md:hidden">
         <button id="hamburger">
