@@ -3,6 +3,11 @@
 @section('title', 'Landing Page')
 
 @section('content')
+<style>
+    html {
+        scroll-behavior: smooth;
+    }
+</style>
     @include('components.navbar')
     <!-- Hero Section -->
     <div class="relative bg-cover bg-center h-screen" style="background-image: url('/assets/img/lapanganfutsal.jpg');" id="beranda">
@@ -39,14 +44,8 @@
             <div class="grid grid-cols-1 md:grid-cols-2 items-center gap-8">
                 <div class="max-w-lg">
                     <h2 class="text-3xl font-extrabold text-gray-800 mb-8 text-center">Tentang Kami</h2>
-                    <p class="mt-4 text-gray-600 text-lg">
-                        Sistem Reservasi Lapangan Futsal kami hadir untuk memberikan pengalaman bermain futsal terbaik bagi semua penggemar olahraga. 
-                        Kami menawarkan berbagai lapangan futsal dengan fasilitas modern dan lokasi strategis. Tujuan kami adalah memberikan kemudahan bagi 
-                        Anda dalam melakukan reservasi lapangan secara cepat dan efisien. Kami berkomitmen untuk menyediakan layanan pelanggan yang luar biasa, 
-                        dengan tim yang siap membantu menjawab pertanyaan dan memberikan informasi yang Anda butuhkan. Selain harga yang kompetitif, kami memastikan 
-                        transparansi dalam setiap transaksi, sehingga Anda bisa merasa aman saat melakukan reservasi. Dengan dukungan terhadap komunitas futsal lokal 
-                        melalui turnamen dan acara, kami percaya bahwa olahraga bisa mempererat hubungan antar pemain. Jika Anda mencari layanan reservasi lapangan 
-                        futsal yang terpercaya dan berkualitas, Anda telah berada di tempat yang tepat. Kami menantikan kesempatan untuk melayani Anda!
+                   <p class="mt-4 text-gray-600 text-lg">
+                    {{ $setting->description ?? 'Deskripsi tentang tempat futsal belum diatur oleh admin.' }}
                     </p>
                 </div>
                 <div class="mt-12 md:mt-0">
@@ -59,7 +58,7 @@
     <!-- Lapangan Tersedia -->
     <div class="container mx-auto py-12">
         <h2 class="text-3xl font-extrabold text-center mb-12" id="fields">Lapangan Tersedia</h2>
-    
+
         <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
             @if(isset($fields) && $fields->isNotEmpty())
                 @foreach($fields as $field)
@@ -92,35 +91,33 @@
     </div>
 
     <!-- Modal Pop-Up -->
-    <div id="bookingModal" class="fixed inset-0 bg-black bg-opacity-50 hidden flex items-center justify-center p-4">
+    <div id="bookingModal" class="fixed inset-0 z-[9999] bg-black bg-opacity-50 hidden flex items-center justify-center p-4">
         <div class="bg-white rounded-lg shadow-lg w-full max-w-md p-6 overflow-y-auto max-h-screen">
             <h2 class="text-2xl font-bold mb-6 text-center">Pesan Lapangan</h2>
             <form action="{{ route('user.bookings.store') }}" method="POST">
                 @csrf
-                <!-- Field ID (Hidden) -->
                 <input type="hidden" id="field_id" name="field_id">
-    
-                <!-- Pilih Lapangan -->
+
                 <div class="mb-4">
                     <label for="field_name" class="block text-sm font-medium text-gray-700">Lapangan</label>
                     <input type="text" id="field_name" name="field_name" readonly
                         class="mt-1 block w-full border border-gray-300 rounded-lg px-3 py-2 bg-gray-100">
                 </div>
-    
+
                 <!-- Pilih Tanggal -->
                 <div class="mb-4">
                     <label for="date" class="block text-sm font-medium text-gray-700">Pilih Tanggal</label>
                     <input type="date" id="date" name="date" required
                         class="mt-1 block w-full border border-gray-300 rounded-lg px-3 py-2">
                 </div>
-    
+
                 <!-- Harga -->
                 <div class="mb-4">
                     <label for="price" class="block text-sm font-medium text-gray-700">Harga per Jam</label>
                     <input type="text" id="price" name="price" readonly
                         class="mt-1 block w-full border border-gray-300 rounded-lg px-3 py-2 bg-gray-100">
                 </div>
-    
+
                 <!-- Pilih Jadwal -->
                 <div class="mb-4">
                     <label for="schedule_id" class="block text-sm font-medium text-gray-700">Pilih Jadwal</label>
@@ -129,133 +126,130 @@
                     <option value="">Pilih Jadwal</option>
                     </select>
                 </div>
-    
+
                 <!-- Total Harga -->
                 <div class="mb-4">
                     <label for="booking_name" class="block text-sm font-medium text-gray-700">Total Harga</label>
                     <span id="total_price" class="mt-1 block w-full border border-gray-300 rounded-lg px-3 py-2">Rp 0</span>
                 </div>
-    
+
                 <!-- Atas Nama -->
                 <div class="mb-4">
                     <label for="booking_name" class="block text-sm font-medium text-gray-700">Atas Nama</label>
                     <input type="text" name="booking_name" id="booking_name" required
                         class="mt-1 block w-full border border-gray-300 rounded-lg px-3 py-2">
                 </div>
-    
+
                 <!-- Nomor Telepon -->
                 <div class="mb-4">
                     <label for="phone_number" class="block text-sm font-medium text-gray-700">Nomor Telepon</label>
                     <input type="text" name="phone_number" id="phone_number" required
                         class="mt-1 block w-full border border-gray-300 rounded-lg px-3 py-2">
                 </div>
-    
+
                 <!-- Konfirmasi -->
                 <button id="konfirmasiPesananBtn" type="submit"
                     class="w-full bg-blue-500 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-lg transition">
                     Konfirmasi Pesanan
                 </button>
             </form>
-    
+
             <!-- Batal -->
             <button onclick="closeModal()" class="mt-4 w-full text-red-500 font-medium py-2 px-4 rounded-lg">
                 Batal
             </button>
         </div>
     </div>
-    
-    
+
+
 
     <!-- Informasi Layanan -->
-    <div class="bg-gray-100 py-16">
-        <div class="container mx-auto text-center">
-            <h2 class="text-3xl font-extrabold mb-8" id="layanan">Kenapa Pilih Kami?</h2>
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-12">
-                <!-- Mudah & Cepat -->
-                <div class="p-10 bg-white shadow-lg rounded-lg transition-transform transform hover:scale-105">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="w-16 h-16 mx-auto mb-4 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M8 16l-4-4m0 0l4-4m-4 4h16M4 12h16m-6 4h6M10 8h6" />
-                    </svg>
-                    <h3 class="text-2xl font-bold mb-2">Mudah & Cepat</h3>
-                    <p class="text-lg text-gray-600">Proses reservasi lapangan futsal kami mudah dan cepat, hanya dengan beberapa klik.</p>
-                </div>
-    
-                <!-- Jaminan Lapangan -->
-                <div class="p-10 bg-white shadow-lg rounded-lg transition-transform transform hover:scale-105">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="w-16 h-16 mx-auto mb-4 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M4 16V8a4 4 0 011.38-3.03m13.17-.59A4 4 0 0116 8v8a4 4 0 01-4 4m4-12H8m6 0h2M6 8v8a4 4 0 004 4m6-12v8" />
-                    </svg>
-                    <h3 class="text-2xl font-bold mb-2">Jaminan Lapangan</h3>
-                    <p class="text-lg text-gray-600">Kami menjamin lapangan yang dipesan tersedia sesuai dengan waktu yang dipilih.</p>
-                </div>
-    
-                <!-- Pembayaran Aman -->
-                <div class="p-10 bg-white shadow-lg rounded-lg transition-transform transform hover:scale-105">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="w-16 h-16 mx-auto mb-4 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2-2m0 0l2 2m-2-2v6m0-6a9 9 0 11-6.707 14.364M15 9a9 9 0 110-18 9 9 0 016.707 2.636" />
-                    </svg>
-                    <h3 class="text-2xl font-bold mb-2">Pembayaran Aman</h3>
-                    <p class="text-lg text-gray-600">Kami menyediakan metode pembayaran yang aman dan dapat dipercaya.</p>
-                </div>
+    <div class="bg-gray-100 py-16 relative z-0">
+    <div class="container mx-auto text-center">
+        <h2 class="text-3xl font-extrabold mb-8" id="layanan">Kenapa Pilih Kami?</h2>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-12">
+
+            <div class="relative z-0 p-10 bg-white shadow-lg rounded-lg transition-transform transform hover:scale-105">
+                <svg xmlns="http://www.w3.org/2000/svg" class="w-16 h-16 mx-auto mb-4 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M8 16l-4-4m0 0l4-4m-4 4h16M4 12h16m-6 4h6M10 8h6" />
+                </svg>
+                <h3 class="text-2xl font-bold mb-2">Mudah & Cepat</h3>
+                <p class="text-lg text-gray-600">Proses reservasi lapangan futsal kami mudah dan cepat, hanya dengan beberapa klik.</p>
             </div>
+
+            <div class="relative z-0 p-10 bg-white shadow-lg rounded-lg transition-transform transform hover:scale-105">
+                <svg xmlns="http://www.w3.org/2000/svg" class="w-16 h-16 mx-auto mb-4 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M4 16V8a4 4 0 011.38-3.03m13.17-.59A4 4 0 0116 8v8a4 4 0 01-4 4m4-12H8m6 0h2M6 8v8a4 4 0 004 4m6-12v8" />
+                </svg>
+                <h3 class="text-2xl font-bold mb-2">Jaminan Lapangan</h3>
+                <p class="text-lg text-gray-600">Kami menjamin lapangan yang dipesan tersedia sesuai dengan waktu yang dipilih.</p>
+            </div>
+
+            <div class="relative z-0 p-10 bg-white shadow-lg rounded-lg transition-transform transform hover:scale-105">
+                <svg xmlns="http://www.w3.org/2000/svg" class="w-16 h-16 mx-auto mb-4 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2-2m0 0l2 2m-2-2v6m0-6a9 9 0 11-6.707 14.364M15 9a9 9 0 110-18 9 9 0 016.707 2.636" />
+                </svg>
+                <h3 class="text-2xl font-bold mb-2">Pembayaran Aman</h3>
+                <p class="text-lg text-gray-600">Kami menyediakan metode pembayaran yang aman dan dapat dipercaya.</p>
+            </div>
+
         </div>
     </div>
-    
+</div>
+
 
 
     <!-- Visit us section -->
-    <section class="bg-white">
-        <div class="max-w-7xl mx-auto py-8 px-4 sm:px-6 lg:py-20 lg:px-8">
-            <div class="max-w-2xl lg:max-w-4xl mx-auto text-center">
-                <h2 class="text-3xl font-extrabold text-gray-900" id="contactUs">Lokasi Kami</h2>
-                {{-- <p class="mt-3 text-lg text-gray-500">Let us serve you the best</p> --}}
-            </div>
-            <div class="mt-8 lg:mt-20">
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
-                    <div>
-                        <div class="max-w-full mx-auto rounded-lg overflow-hidden">
-                            <div class="border-t border-gray-200 px-6 py-4">
-                                <h3 class="text-lg font-bold text-gray-900">Kontak</h3>
-                                <p class="mt-1 font-bold text-gray-600"><a href="tel:+123">Phone: +62
-                                        123456789</a></p>
-                                <a class="flex m-1" href="tel:+919823331842">
-                                    <div class="flex-shrink-0">
-                                        <div
-                                            class="flex items-center justify-between h-10 w-30 rounded-md bg-blue-500 hover:bg-blue-700 text-white p-2">
-                                            <!-- Heroicon name: phone -->
-                                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
-                                                stroke-width="1.5" stroke="currentColor" class="w-6 h-6">
-                                                <path stroke-linecap="round" stroke-linejoin="round"
-                                                    d="M2.25 6.75c0 8.284 6.716 15 15 15h2.25a2.25 2.25 0 002.25-2.25v-1.372c0-.516-.351-.966-.852-1.091l-4.423-1.106c-.44-.11-.902.055-1.173.417l-.97 1.293c-.282.376-.769.542-1.21.38a12.035 12.035 0 01-7.143-7.143c-.162-.441.004-.928.38-1.21l1.293-.97c.363-.271.527-.734.417-1.173L6.963 3.102a1.125 1.125 0 00-1.091-.852H4.5A2.25 2.25 0 002.25 4.5v2.25z" />
-                                            </svg>
-                                            Hubungi Sekarang
-                                        </div>
-                                    </div>
+   <section class="bg-white py-16" id="contactUs">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="max-w-2xl lg:max-w-4xl mx-auto text-center mb-10">
+            <h2 class="text-3xl font-extrabold text-gray-900">Lokasi Kami</h2>
+        </div>
 
-                                </a>
-                            </div>
-                            <div class="border-t border-gray-200 px-6 py-4">
-                                <h3 class="text-lg font-medium text-gray-900">Alamat Kami</h3>
-                                <p class="mt-1 text-gray-600">Jl. Pelita I, Labuhan Ratu, Kec. Kedaton, Kota Bandar Lampung, Lampung 35132</p>
-                            </div>
-                            <div class="border-t border-gray-200 px-6 py-4">
-                                <h3 class="text-lg font-medium text-gray-900">Jam Operasional</h3>
-                                <p class="mt-1 text-gray-600">Senin - Minggu : 07.00 Pagi - 22.00 Malam</p>
-                            </div>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-8 items-start">
+            <div class="bg-white rounded-lg shadow-lg border border-gray-100 overflow-hidden">
+                <div class="border-b border-gray-200 px-6 py-5">
+                    <h3 class="text-lg font-bold text-gray-900">Kontak</h3>
+                    <p class="mt-2 font-bold text-gray-600">WhatsApp: +{{ $setting->whatsapp_number ?? '-' }}</p>
+                    <a class="inline-flex mt-3" target="_blank" href="https://wa.me/{{ $setting->whatsapp_number }}">
+                        <div class="flex items-center justify-center h-10 px-4 rounded-md bg-green-500 hover:bg-green-600 transition-colors text-white shadow-md">
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5 mr-2">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M8.625 9.75a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0H8.25m4.125 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0H12m4.125 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0h-.375m-13.5 3.01c0 1.6 1.123 2.994 2.707 3.227 1.087.16 2.185.283 3.293.369V21l4.184-4.183a1.14 1.14 0 01.778-.332 48.294 48.294 0 005.83-.498c1.585-.233 2.708-1.626 2.708-3.228V6.741c0-1.602-1.123-2.995-2.707-3.228A48.394 48.394 0 0012 3c-2.392 0-4.744.175-7.043.513C3.373 3.746 2.25 5.14 2.25 6.741v6.018z" />
+                            </svg>
+                            Chat via WhatsApp
                         </div>
-                    </div>
-                    <div class="rounded-lg overflow-hidden order-none sm:order-first">
-                        <iframe
-                            src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3972.265900084063!2d105.25315567352052!3d-5.376367153772092!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x2e40dad012055e95%3A0x34e5c1b61b87c43b!2sGedung%20Futsal%20Srikandi!5e0!3m2!1sid!2sid!4v1730074072695!5m2!1sid!2sid" width="600" height="450" style="border:0;" allowfullscreen="" loading="lazy" referrerpolicy="no-referrer-when-downgrade"
-                            class="w-full" width="600" height="450" style="border:0;" allowfullscreen="" loading="lazy"
-                            referrerpolicy="no-referrer-when-downgrade"></iframe>
-
-                    </div>
-
+                    </a>
+                </div>
+                <div class="border-b border-gray-200 px-6 py-5">
+                    <h3 class="text-lg font-bold text-gray-900">Alamat Kami</h3>
+                    <p class="mt-2 text-gray-600 leading-relaxed">{{ $setting->address ?? 'Alamat belum diatur' }}</p>
+                </div>
+                <div class="px-6 py-5">
+                    <h3 class="text-lg font-bold text-gray-900">Jam Operasional</h3>
+                    <p class="mt-2 text-gray-600">{{ $setting->open_hours ?? 'Senin - Minggu' }}</p>
                 </div>
             </div>
+
+            <div class="rounded-lg overflow-hidden shadow-lg border border-gray-100 bg-gray-200 flex items-center justify-center w-full h-full min-h-[350px]">
+                @if(isset($setting) && $setting->google_maps_link)
+                    <div class="w-full h-full flex iframe-container">
+                        {!! $setting->google_maps_link !!}
+                    </div>
+                    <style>
+                        /* Memaksa iframe dari admin memenuhi kotak */
+                        .iframe-container iframe {
+                            width: 100% !important;
+                            height: 100% !important;
+                            min-height: 350px;
+                        }
+                    </style>
+                @else
+                    <p class="text-gray-500 font-medium">Peta belum diatur di Admin Panel.</p>
+                @endif
+            </div>
         </div>
-    </section>
+    </div>
+</section>
 
 
     <script>
@@ -316,7 +310,7 @@
                     data.forEach(schedule => {
                         // Format the time to be in "09:00 - 10:00" format
                         let formattedTime = schedule.start_time.substring(0, 5) + ' - ' + schedule.end_time.substring(0, 5);
-                        
+
                         // Create option element with formatted schedule
                         let option = document.createElement('option');
                         option.value = schedule.id;
@@ -367,10 +361,10 @@
         function openModal(fieldId, fieldName, fieldPrice) {
             document.getElementById('field_id').value = fieldId;
             document.getElementById('field_name').value = fieldName;
-            
+
             // Menghilangkan .00 pada harga dengan membulatkan harga jika perlu
             let formattedPrice = parseFloat(fieldPrice).toLocaleString('id-ID', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
-            
+
             document.getElementById('price').value = `Rp ${formattedPrice}`;
             document.getElementById('bookingModal').classList.remove('hidden');
         }
@@ -385,14 +379,14 @@
         const apiKey = 'e4eef249a39532aff45411e08ed49442'; // Ganti dengan API key yang kamu dapatkan
         const city = 'Jakarta'; // Ganti dengan kota yang diinginkan
         const units = 'metric'; // Untuk mendapatkan suhu dalam Celsius
-    
+
         // Mengambil data cuaca dari OpenWeatherMap API
         fetch(`https://api.openweathermap.org/data/2.5/weather?q=${city}&units=${units}&appid=${apiKey}`)
             .then(response => response.json())
             .then(data => {
                 const weatherDescription = data.weather[0].description;
                 const temperature = data.main.temp;
-    
+
                 // Menampilkan data cuaca di halaman
                 document.getElementById('weather-description').textContent = `Cuaca: ${weatherDescription}`;
                 document.getElementById('weather-temp').textContent = `${temperature}°C`;

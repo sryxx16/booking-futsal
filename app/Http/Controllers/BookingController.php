@@ -57,12 +57,21 @@ class BookingController extends Controller
             'status' => 'pending',
             'expired_at' => $expiredAt,
         ]);
-
         // Memperbarui jadwal untuk menyimpan tanggal booking
         $schedule->update([
             'date' => $request->date,  // Menyimpan tanggal booking ke dalam jadwal
             'is_available' => 0
         ]);
+$pesanWa = "Halo *{$request->booking_name}*! 👋\n\n";
+        $pesanWa .= "Booking lapangan futsal kamu berhasil dibuat. Berikut detailnya:\n\n";
+        $pesanWa .= "📅 Tanggal: " . \Carbon\Carbon::parse($request->date)->translatedFormat('d F Y') . "\n";
+        $pesanWa .= "⏰ Jam: {$schedule->start_time} - {$schedule->end_time}\n";
+        $pesanWa .= "⏳ Batas Waktu Bayar: " . \Carbon\Carbon::parse($expiredAt)->format('H:i') . " WIB\n\n";
+        $pesanWa .= "Mohon segera selesaikan pembayaran sebelum batas waktu habis ya. Terima kasih! ⚽";
+
+        // Panggil FonnteService
+        \App\Services\FonnteService::sendMessage($request->phone_number, $pesanWa);
+        // ==========================================
 
         // Jika pengguna adalah admin, arahkan ke halaman admin
         if (auth()->user()->role === 'admin') {
@@ -79,8 +88,8 @@ class BookingController extends Controller
         if (Auth::id() !== $booking->user_id && Auth::user()->role !== 'admin') {
             return redirect()->route('admin.bookings.index')->with('error', 'Anda tidak memiliki izin untuk mengedit booking ini.');
         }
-        
-        $booking = $booking->load('schedule'); 
+
+        $booking = $booking->load('schedule');
         $fields = Field::all();
         $schedules = Schedule::all();
         return view('admin.bookings.edit', compact('booking', 'fields', 'schedules'));
@@ -171,7 +180,7 @@ class BookingController extends Controller
 
         // Konversi tanggal yang dipilih menjadi nama hari
         $day = \Carbon\Carbon::parse($validated['date'])->locale('id')->isoFormat('dddd'); // "Senin", "Selasa", dst.
-        
+
         // Ambil jadwal berdasarkan lapangan, hari, dan status tersedia
         $schedules = Schedule::where('field_id', $validated['field_id'])
                             ->where('day', ucfirst($day))  // Mencocokkan nama hari (case sensitive)
@@ -193,7 +202,7 @@ class BookingController extends Controller
                 // Jika sudah dibayar, tidak perlu countdown
                 $booking->expired_at_display = '-';
             } elseif ($booking->payment && $booking->payment->status == 'failed') {
-                
+
 
                 // Update jadwal menjadi tersedia kembali
                 if ($booking->schedule) {
@@ -208,7 +217,7 @@ class BookingController extends Controller
 
                 // Pembayaran gagal
                 $booking->expired_at_display = 'Pembayaran Gagal';
-            
+
             } elseif ($booking->payment && $booking->payment->status == 'checked') {
                 // Pembayaran sedang diperiksa
                 $booking->expired_at_display = 'Mengecek Pembayaran';
@@ -220,13 +229,13 @@ class BookingController extends Controller
                     // Jika sudah lewat waktu expired dan status pending, ubah jadi canceled
                     $booking->status = 'canceled';
                     $booking->save();
-                    
+
                     // Update jadwal menjadi tersedia
                     if ($booking->schedule) {
                         $booking->schedule->is_available = true; // Asumsi ada kolom 'is_available'
                         $booking->schedule->save();
                     }
-            
+
                     $booking->expired_at_display = 'Expired';
                 } else {
                     // Tampilkan countdown jika belum expired
@@ -234,8 +243,8 @@ class BookingController extends Controller
                 }
             }
         }
-        
-        
+
+
 
         // Kirim data booking ke view
         return view('user.administration.index', compact('bookings'));
@@ -286,7 +295,7 @@ class BookingController extends Controller
         if ($booking && $booking->status == 'pending') {
             // Update status booking menjadi 'canceled'
             $booking->update(['status' => 'canceled']);
-            
+
             // Update jadwal menjadi tersedia dan set tanggal menjadi null
             $schedule = $booking->schedule;
             if ($schedule) {
@@ -302,4 +311,3 @@ class BookingController extends Controller
 
 
 }
-

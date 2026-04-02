@@ -6,45 +6,51 @@
         </div>
         <nav class="text-white text-base font-semibold pt-3">
             <!-- Dashboard -->
-            <a href="{{ route('admin.dashboard')}}" 
+            <a href="{{ route('admin.dashboard')}}"
                 class="flex items-center {{ request()->routeIs('admin.dashboard') ? 'active-nav-link' : 'opacity-75 hover:opacity-100' }} py-4 pl-6 nav-item">
                 <i class="fas fa-tachometer-alt mr-3"></i>
                 Dashboard
             </a>
 
             <!-- Tabel User -->
-            <a href="{{ route('admin.users.index') }}" 
+            <a href="{{ route('admin.users.index') }}"
                 class="flex items-center {{ request()->routeIs('admin.users.index') ? 'active-nav-link' : 'opacity-75 hover:opacity-100' }} py-4 pl-6 nav-item">
                 <i class="fas fa-users mr-3"></i>
                 Tabel User
             </a>
 
             <!-- Tabel Lapangan -->
-            <a href="{{ route('admin.fields.index') }}" 
+            <a href="{{ route('admin.fields.index') }}"
                 class="flex items-center {{ request()->routeIs('admin.fields.index') ? 'active-nav-link' : 'opacity-75 hover:opacity-100' }} py-4 pl-6 nav-item">
                 <i class="fas fa-futbol mr-3"></i>
                 Tabel Lapangan
             </a>
 
             <!-- Tabel Jadwal -->
-            <a href="{{ route('admin.schedules.index') }}" 
+            <a href="{{ route('admin.schedules.index') }}"
                 class="flex items-center {{ request()->routeIs('admin.schedules.index') ? 'active-nav-link' : 'opacity-75 hover:opacity-100' }} py-4 pl-6 nav-item">
                 <i class="fas fa-calendar-alt mr-3"></i>
                 Tabel Jadwal
             </a>
 
             <!-- Tabel Booking -->
-            <a href="{{ route('admin.bookings.index') }}" 
+            <a href="{{ route('admin.bookings.index') }}"
                 class="flex items-center {{ request()->routeIs('admin.bookings.index') ? 'active-nav-link' : 'opacity-75 hover:opacity-100' }} py-4 pl-6 nav-item">
                 <i class="fas fa-book mr-3"></i>
                 Tabel Booking
             </a>
 
             <!-- Tabel Pembayaran (Payment) -->
-            <a href="{{ route('admin.payments.index') }}" 
+            <a href="{{ route('admin.payments.index') }}"
                 class="flex items-center {{ request()->routeIs('admin.payments.index') ? 'active-nav-link' : 'opacity-75 hover:opacity-100' }} py-4 pl-6 nav-item">
                 <i class="fas fa-credit-card mr-3"></i>
                 Tabel Pembayaran
+            </a>
+
+            <a href="{{ route('admin.settings.index') }}"
+            class="flex items-center {{ request()->routeIs('admin.settings.index') ? 'active-nav-link' : 'opacity-75 hover:opacity-100' }} py-4 pl-6 nav-item">
+            <i class="nav-icon fas fa-cogs mr-3"></i> <p>
+                Pengaturan Web</p>
             </a>
 
             <!-- Log Out -->
@@ -54,7 +60,7 @@
                     <i class="fas fa-arrow-circle-up mr-3"></i>
                     Log Out
                 </button>
-            </form>        
+            </form>
         </nav>
     </aside>
 
