@@ -8,117 +8,132 @@
         scroll-behavior: smooth;
     }
 </style>
+<link href="https://unpkg.com/aos@2.3.1/dist/aos.css" rel="stylesheet">
     @include('components.navbar')
-    <div class="relative bg-cover bg-center h-screen" style="background-image: url('/assets/img/lapanganfutsal.jpg');" id="beranda">
-        <div id="weather" class="absolute top-4 left-4 bg-black bg-opacity-50 text-white p-4 rounded-lg flex items-center space-x-4 z-10">
-            @if(isset($weatherDescription) && isset($temperature))
-                <div class="flex items-center">
-                    <img src="https://openweathermap.org/img/wn/{{ $weatherIcon }}@2x.png" alt="Weather Icon" class="w-16 h-16 filter hue-rotate-180 saturate-200">
-                    <div>
-                        <p id="weather-description" class="text-xl">{{ $weatherDescription }}</p>
-                        <p id="weather-temp" class="text-2xl font-bold">{{ $temperature }}°C</p>
-                        <p id="weather-city" class="text-sm mt-2">Jakarta</p>
-                    </div>
-                </div>
-            @elseif(isset($error))
-                <p class="text-xl text-red-500">{{ $error }}</p>
-            @else
-                <p class="text-xl">Memuat data cuaca...</p>
-            @endif
-        </div>
 
-        <div class="flex items-center justify-center h-full bg-black bg-opacity-50">
-            <div class="text-center text-white">
-                <h1 class="text-4xl md:text-6xl font-bold mb-4">Reservasi Lapangan Futsal</h1>
-                <p class="text-lg md:text-xl mb-6">Pesan lapangan futsal dengan mudah, cepat, dan aman.</p>
-                <a href="#fields" class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-full text-lg">Lihat Lapangan</a>
+    <div class="relative bg-cover bg-center h-screen" style="background-image: url('/assets/img/lapanganfutsal.jpg');" id="beranda">
+    <div class="absolute inset-0 bg-gradient-to-b from-black/70 via-black/50 to-slate-50"></div>
+
+    <div id="weather" data-aos="fade-down" class="absolute top-6 left-6 backdrop-blur-md bg-white/20 border border-white/30 text-white p-4 rounded-2xl shadow-2xl flex items-center space-x-4 z-10 transition-transform hover:scale-105">
+        @if(isset($weatherDescription) && isset($temperature))
+            <div class="flex items-center">
+                <img src="https://openweathermap.org/img/wn/{{ $weatherIcon }}@2x.png" alt="Weather Icon" class="w-14 h-14 drop-shadow-lg">
+                <div>
+                    <p class="text-lg font-medium capitalize">{{ $weatherDescription }}</p>
+                    <p class="text-3xl font-extrabold tracking-tighter">{{ $temperature }}°C</p>
+                    <p class="text-xs mt-1 text-gray-200">Jakarta</p>
+                </div>
             </div>
-        </div>
+        @else
+            <p class="text-sm font-medium">Memuat cuaca...</p>
+        @endif
     </div>
 
-    <section class="bg-gray-100" id="aboutus">
+    <div class="relative z-10 flex items-center justify-center h-full">
+        <div class="text-center text-white px-4">
+            <h1 data-aos="fade-up" class="text-5xl md:text-7xl font-extrabold mb-6 tracking-tight drop-shadow-xl">
+                Reservasi <span class="text-blue-400">Futsal</span>
+            </h1>
+            <p data-aos="fade-up" data-aos-delay="200" class="text-lg md:text-2xl mb-10 text-gray-200 font-light drop-shadow-md">
+                Pesan lapangan dengan mudah, cepat, dan aman.
+            </p>
+            <a data-aos="zoom-in" data-aos-delay="400" href="#fields" class="inline-block bg-blue-600 hover:bg-blue-500 transition-all duration-300 transform hover:-translate-y-1 shadow-[0_10px_20px_rgba(37,_99,_235,_0.3)] text-white font-bold py-4 px-8 rounded-full text-lg">
+                Lihat Lapangan Tersedia
+            </a>
+        </div>
+    </div>
+</div>
+
+    <section class="bg-gradient-to-br from-slate-50 via-white to-blue-50" id="aboutus">
         <div class="container mx-auto py-16 px-4 sm:px-6 lg:px-8">
             <div class="grid grid-cols-1 md:grid-cols-2 items-center gap-8">
                 <div class="max-w-lg">
-                    <h2 class="text-3xl font-extrabold text-gray-800 mb-8 text-center">Tentang Kami</h2>
+                    <h2 class="text-3xl font-extrabold text-gray-800 mb-8 text-center md:text-left">Tentang Kami</h2>
                    <p class="mt-4 text-gray-600 text-lg">
                     {{ $setting->description ?? 'Deskripsi tentang tempat futsal belum diatur oleh admin.' }}
                     </p>
                 </div>
                 <div class="mt-12 md:mt-0">
-                    <img src="https://images.unsplash.com/photo-1531973576160-7125cd663d86" alt="About Us Image" class="object-cover rounded-lg shadow-md">
+                    <img src="https://images.unsplash.com/photo-1531973576160-7125cd663d86" alt="About Us Image" class="object-cover rounded-2xl shadow-xl border border-white">
                 </div>
             </div>
         </div>
     </section>
 
-    <div class="container mx-auto py-12">
-        <h2 class="text-3xl font-extrabold text-center mb-12" id="fields">Lapangan Tersedia</h2>
+    <section class="bg-blue-50/50 border-t border-b border-blue-100 py-16">
+        <div class="container mx-auto">
+            <h2 class="text-3xl font-extrabold text-center mb-12 text-gray-900" id="fields">Lapangan Tersedia</h2>
 
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-            @if(isset($fields) && $fields->isNotEmpty())
-                @foreach($fields as $field)
-                    <div class="bg-white shadow-lg rounded-lg overflow-hidden">
-                        <img src="{{ asset('storage/' . $field->photo) }}" alt="{{ $field->name }}" class="w-full h-48 object-cover">
-                        <div class="p-6">
-                            <h3 class="text-xl font-bold">{{ $field->name }}</h3>
-                            <p class="text-gray-600 mb-4">{{ $field->location }}</p>
-                            <p class="text-gray-600">{{ $field->description }}</p>
-                            <p class="text-blue-600 font-bold mt-4">Rp {{ number_format($field->price_per_hour, 0, ',', '.') }} / jam</p>
-                            @auth
-                            <button
-                                onclick="openModal({{ $field->id }}, '{{ $field->name }}', '{{ $field->price_per_hour }}')"
-                                class="mt-4 block bg-blue-500 hover:bg-blue-700 text-white text-center font-bold py-2 px-4 rounded">
-                                Pesan Sekarang
-                            </button>
-                            @else
-                                <a href="{{ route('login') }}" class="mt-4 block bg-blue-500 hover:bg-blue-700 text-white text-center font-bold py-2 px-4 rounded">
-                                    Pesan Sekarang
-                                </a>
-                            @endauth
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-8 px-4 sm:px-6 lg:px-8">
+            @foreach($fields as $index => $field)
+                <div data-aos="fade-up" data-aos-delay="{{ $index * 100 }}" class="bg-white shadow-xl hover:shadow-2xl transition-all duration-300 rounded-2xl overflow-hidden group border border-gray-100">
+                    <div class="relative overflow-hidden">
+                        <img src="{{ asset('storage/' . $field->photo) }}" alt="{{ $field->name }}" class="w-full h-56 object-cover transform group-hover:scale-110 transition-transform duration-500">
+                        <div class="absolute top-4 right-4 bg-blue-600 text-white text-sm font-bold px-3 py-1 rounded-full shadow-lg">
+                            Rp {{ number_format($field->price_per_hour, 0, ',', '.') }}/jam
                         </div>
                     </div>
-                @endforeach
-            @else
-                <p>Tidak ada lapangan yang tersedia.</p>
-            @endif
-        </div>
-    </div>
+                    <div class="p-6">
+                        <h3 class="text-2xl font-bold text-gray-800 mb-2">{{ $field->name }}</h3>
+                        <p class="text-gray-500 text-sm mb-4 flex items-center">
+                            <svg class="w-4 h-4 mr-1 text-red-500" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clip-rule="evenodd"></path></svg>
+                            {{ $field->location }}
+                        </p>
+                        <p class="text-gray-600 line-clamp-2">{{ $field->description }}</p>
 
-    <div class="bg-gray-100 py-16">
-        <div class="container mx-auto text-center">
-            <h2 class="text-3xl font-extrabold mb-8" id="layanan">Kenapa Pilih Kami?</h2>
+                        @auth
+                        <button onclick="openModal({{ $field->id }}, '{{ $field->name }}', '{{ $field->price_per_hour }}')" class="mt-6 w-full bg-blue-50 text-blue-600 hover:bg-blue-600 hover:text-white font-bold py-3 px-4 rounded-xl transition-colors duration-300">
+                            Pesan Sekarang
+                        </button>
+                        @else
+                        <a href="{{ route('login') }}" class="mt-6 block text-center bg-blue-50 text-blue-600 hover:bg-blue-600 hover:text-white font-bold py-3 px-4 rounded-xl transition-colors duration-300">
+                            Masuk untuk Pesan
+                        </a>
+                        @endauth
+                    </div>
+                </div>
+            @endforeach
+            </div>
+        </div>
+    </section>
+
+    <div class="bg-slate-900 py-20 relative overflow-hidden">
+        <div class="absolute top-0 left-0 w-64 h-64 bg-blue-600 rounded-full mix-blend-multiply filter blur-[100px] opacity-20"></div>
+        <div class="absolute bottom-0 right-0 w-64 h-64 bg-purple-600 rounded-full mix-blend-multiply filter blur-[100px] opacity-20"></div>
+
+        <div class="container mx-auto text-center relative z-10 px-4">
+            <h2 class="text-3xl font-extrabold mb-12 text-white" id="layanan">Kenapa Pilih Kami?</h2>
             <div class="grid grid-cols-1 md:grid-cols-3 gap-12">
 
-                <div class="p-10 bg-white shadow-lg rounded-lg transition-transform transform hover:scale-105">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="w-16 h-16 mx-auto mb-4 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                <div class="p-10 bg-slate-800/80 backdrop-blur-sm shadow-2xl rounded-2xl border border-slate-700 transition-transform transform hover:-translate-y-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="w-16 h-16 mx-auto mb-4 text-blue-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M8 16l-4-4m0 0l4-4m-4 4h16M4 12h16m-6 4h6M10 8h6" />
                     </svg>
-                    <h3 class="text-2xl font-bold mb-2">Mudah & Cepat</h3>
-                    <p class="text-lg text-gray-600">Proses reservasi lapangan futsal kami mudah dan cepat, hanya dengan beberapa klik.</p>
+                    <h3 class="text-2xl font-bold mb-2 text-white">Mudah & Cepat</h3>
+                    <p class="text-lg text-gray-400">Proses reservasi lapangan futsal kami mudah dan cepat, hanya dengan beberapa klik.</p>
                 </div>
 
-                <div class="p-10 bg-white shadow-lg rounded-lg transition-transform transform hover:scale-105">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="w-16 h-16 mx-auto mb-4 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                <div class="p-10 bg-slate-800/80 backdrop-blur-sm shadow-2xl rounded-2xl border border-slate-700 transition-transform transform hover:-translate-y-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="w-16 h-16 mx-auto mb-4 text-blue-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M4 16V8a4 4 0 011.38-3.03m13.17-.59A4 4 0 0116 8v8a4 4 0 01-4 4m4-12H8m6 0h2M6 8v8a4 4 0 004 4m6-12v8" />
                     </svg>
-                    <h3 class="text-2xl font-bold mb-2">Jaminan Lapangan</h3>
-                    <p class="text-lg text-gray-600">Kami menjamin lapangan yang dipesan tersedia sesuai dengan waktu yang dipilih.</p>
+                    <h3 class="text-2xl font-bold mb-2 text-white">Jaminan Lapangan</h3>
+                    <p class="text-lg text-gray-400">Kami menjamin lapangan yang dipesan tersedia sesuai dengan waktu yang dipilih.</p>
                 </div>
 
-                <div class="p-10 bg-white shadow-lg rounded-lg transition-transform transform hover:scale-105">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="w-16 h-16 mx-auto mb-4 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                <div class="p-10 bg-slate-800/80 backdrop-blur-sm shadow-2xl rounded-2xl border border-slate-700 transition-transform transform hover:-translate-y-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="w-16 h-16 mx-auto mb-4 text-blue-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2-2m0 0l2 2m-2-2v6m0-6a9 9 0 11-6.707 14.364M15 9a9 9 0 110-18 9 9 0 016.707 2.636" />
                     </svg>
-                    <h3 class="text-2xl font-bold mb-2">Pembayaran Aman</h3>
-                    <p class="text-lg text-gray-600">Kami menyediakan metode pembayaran yang aman dan dapat dipercaya.</p>
+                    <h3 class="text-2xl font-bold mb-2 text-white">Pembayaran Aman</h3>
+                    <p class="text-lg text-gray-400">Kami menyediakan metode pembayaran yang aman dan dapat dipercaya.</p>
                 </div>
 
             </div>
         </div>
     </div>
 
-    <section class="bg-white py-16" id="contactUs">
+    <section class="bg-gradient-to-b from-slate-50 to-gray-200 py-16" id="contactUs">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="max-w-2xl lg:max-w-4xl mx-auto text-center mb-10">
                 <h2 class="text-3xl font-extrabold text-gray-900">Lokasi Kami</h2>
@@ -126,12 +141,12 @@
 
             <div class="grid grid-cols-1 md:grid-cols-2 gap-8 items-start">
 
-                <div class="bg-white rounded-lg shadow-lg border border-gray-100 overflow-hidden">
-                    <div class="border-b border-gray-200 px-6 py-5">
+                <div class="bg-white rounded-2xl shadow-xl border border-gray-100 overflow-hidden">
+                    <div class="border-b border-gray-100 px-6 py-6">
                         <h3 class="text-lg font-bold text-gray-900">Kontak</h3>
                         <p class="mt-2 font-bold text-gray-600">WhatsApp: +{{ $setting->whatsapp_number ?? '-' }}</p>
-                        <a class="inline-flex mt-3" target="_blank" href="https://wa.me/{{ $setting->whatsapp_number }}">
-                            <div class="flex items-center justify-center h-10 px-4 rounded-md bg-green-500 hover:bg-green-600 transition-colors text-white shadow-md">
+                        <a class="inline-flex mt-4" target="_blank" href="https://wa.me/{{ $setting->whatsapp_number }}">
+                            <div class="flex items-center justify-center h-12 px-6 rounded-xl bg-green-500 hover:bg-green-600 transition-colors text-white font-bold shadow-lg shadow-green-500/30">
                                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5 mr-2">
                                     <path stroke-linecap="round" stroke-linejoin="round" d="M8.625 9.75a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0H8.25m4.125 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0H12m4.125 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0h-.375m-13.5 3.01c0 1.6 1.123 2.994 2.707 3.227 1.087.16 2.185.283 3.293.369V21l4.184-4.183a1.14 1.14 0 01.778-.332 48.294 48.294 0 005.83-.498c1.585-.233 2.708-1.626 2.708-3.228V6.741c0-1.602-1.123-2.995-2.707-3.228A48.394 48.394 0 0012 3c-2.392 0-4.744.175-7.043.513C3.373 3.746 2.25 5.14 2.25 6.741v6.018z" />
                                 </svg>
@@ -139,21 +154,21 @@
                             </div>
                         </a>
                     </div>
-                    <div class="border-b border-gray-200 px-6 py-5">
+                    <div class="border-b border-gray-100 px-6 py-6">
                         <h3 class="text-lg font-bold text-gray-900">Alamat Kami</h3>
                         <p class="mt-2 text-gray-600 leading-relaxed">{{ $setting->address ?? 'Alamat belum diatur' }}</p>
                     </div>
-                    <div class="px-6 py-5">
+                    <div class="px-6 py-6">
                         <h3 class="text-lg font-bold text-gray-900">Jam Operasional</h3>
-                        <p class="mt-2 text-gray-600">{{ $setting->open_hours ?? 'Senin - Minggu' }}</p>
+                        <p class="mt-2 text-gray-600 font-medium">{{ $setting->open_hours ?? 'Senin - Minggu' }}</p>
                     </div>
                 </div>
 
-                <div class="rounded-lg overflow-hidden shadow-lg border border-gray-100 bg-gray-200 w-full h-full min-h-[350px] relative">
+                <div class="rounded-2xl overflow-hidden shadow-xl border border-gray-100 bg-gray-200 w-full h-full min-h-[350px] relative">
 
                     <iframe
                         src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d6337.524782408819!2d106.85205203921608!3d-6.461520198089065!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x2e69c10062133c43%3A0xf61e84c8c0f3ff34!2sCombro%20Fishing!5e1!3m2!1sid!2sid!4v1775113860895!5m2!1sid!2sid" width="600" height="450" style="border:0;" allowfullscreen="" loading="lazy" referrerpolicy="no-referrer-when-downgrade"
-                        class="absolute inset-0 w-full h-full border-0"
+                        class="absolute inset-0 w-full h-full border-0 filter contrast-125"
                         allowfullscreen=""
                         loading="lazy"
                         referrerpolicy="no-referrer-when-downgrade">
@@ -227,6 +242,13 @@
         </div>
     </div>
 
+    <script src="https://unpkg.com/aos@2.3.1/dist/aos.js"></script>
+<script>
+    AOS.init({
+        duration: 800, // Durasi animasi
+        once: true,    // Animasi hanya jalan sekali saat di-scroll ke bawah
+    });
+</script>
 
     <script>
         document.addEventListener('DOMContentLoaded', function () {
@@ -351,7 +373,8 @@
             document.getElementById('bookingModal').classList.add('hidden');
         }
 
-        // Ganti dengan API key kamu
+        // PERHATIAN: API Key OpenWeatherMap kamu masih terekspos di sini.
+        // Hati-hati jika web ini nanti di-online-kan ya bang.
         const apiKey = 'e4eef249a39532aff45411e08ed49442'; // Ganti dengan API key yang kamu dapatkan
         const city = 'Jakarta'; // Ganti dengan kota yang diinginkan
         const units = 'metric'; // Untuk mendapatkan suhu dalam Celsius
