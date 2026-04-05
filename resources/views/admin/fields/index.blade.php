@@ -3,55 +3,69 @@
 @section('title', 'Data Lapangan | Futsal')
 
 @section('content')
-    <div class="flex">
-        @include('components.sidebar') <!-- Sidebar -->
+<div class="flex min-h-screen bg-gray-50 font-sans text-gray-800">
+    @include('components.sidebar')
 
-        <!-- Content Wrapper -->
-        <div class="w-full flex-grow p-6">
-            <h1 class="text-3xl text-black pb-6">Data Lapangan</h1>
+    <div class="w-full flex-grow p-6 lg:p-10">
+        <div class="max-w-7xl mx-auto">
 
-            <div class="mb-4">
-                <a href="{{ route('admin.fields.create') }}" class="inline-flex items-center bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-700">
-                    <i class="fas fa-plus mr-2"></i> Tambah Lapangan
+            <div class="mb-8 flex flex-col md:flex-row md:items-end justify-between gap-4">
+                <div>
+                    <h1 class="text-3xl font-extrabold text-gray-900 tracking-tight">Data Lapangan</h1>
+                    <p class="mt-2 text-sm text-gray-500">Kelola master data fasilitas lapangan dan harga.</p>
+                </div>
+                <a href="{{ route('admin.fields.create') }}" class="inline-flex items-center text-sm font-bold text-white bg-blue-600 hover:bg-blue-700 py-2.5 px-5 rounded-xl shadow-sm transition-colors">
+                    <i class="fas fa-plus mr-2"></i> Tambah Lapangan Baru
                 </a>
             </div>
 
-            <div class="w-full mt-6">
-                <div class="bg-white overflow-auto rounded-lg shadow">
-                    <table class="min-w-full bg-white text-center">
-                        <thead class="bg-gray-800 text-white">
+            <div class="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
+                <div class="overflow-x-auto">
+                    <table class="min-w-full divide-y divide-gray-200">
+                        <thead class="bg-gray-50">
                             <tr>
-                                <th class="w-1/6 py-3 px-4 uppercase font-semibold text-sm">Nama</th>
-                                <th class="w-1/6 py-3 px-4 uppercase font-semibold text-sm">Lokasi</th>
-                                <th class="w-1/6 py-3 px-4 uppercase font-semibold text-sm">Deskripsi</th>
-                                <th class="w-1/6 py-3 px-4 uppercase font-semibold text-sm">Foto</th>
-                                <th class="w-1/6 py-3 px-4 uppercase font-semibold text-sm">Harga</th>
-                                <th class="w-1/6 py-3 px-4 uppercase font-semibold text-sm">Aksi</th>
+                                <th scope="col" class="px-6 py-4 text-left text-xs font-bold text-gray-500 uppercase tracking-wider w-16">Foto</th>
+                                <th scope="col" class="px-4 py-4 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Informasi Lapangan</th>
+                                <th scope="col" class="px-4 py-4 text-center text-xs font-bold text-gray-500 uppercase tracking-wider">Harga per Jam</th>
+                                <th scope="col" class="px-4 py-4 text-center text-xs font-bold text-gray-500 uppercase tracking-wider">Aksi</th>
                             </tr>
                         </thead>
-                        <tbody class="text-gray-700">
+                        <tbody class="bg-white divide-y divide-gray-200">
                             @foreach($fields as $field)
-                            <tr class="border-b">
-                                <td class="py-3 px-4 text-center align-middle">{{ $field->name }}</td>
-                                <td class="py-3 px-4 text-center align-middle">{{ $field->location }}</td>
-                                <td class="py-3 px-4 text-center align-middle">{{ $field->description }}</td>
-                                <td class="py-3 px-4 text-center align-middle">
-                                    <img src="{{ asset('storage/' . $field->photo) }}" alt="{{ $field->name }}" class="w-20 h-20 object-cover mx-auto">
+                            <tr class="hover:bg-gray-50 transition-colors">
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    @if($field->photo)
+                                        <img src="{{ asset('storage/' . $field->photo) }}" alt="{{ $field->name }}" class="w-16 h-16 rounded-lg object-cover shadow-sm border border-gray-100">
+                                    @else
+                                        <div class="w-16 h-16 rounded-lg bg-gray-100 flex items-center justify-center border border-gray-200">
+                                            <i class="fas fa-image text-gray-300 text-xl"></i>
+                                        </div>
+                                    @endif
                                 </td>
-                                <td class="py-3 px-4 text-center align-middle">{{ number_format($field->price_per_hour, 2) }}</td>
-                                <td class="py-3 px-4 text-center align-middle">
-                                    <div class="flex justify-center space-x-2">
-                                        <a href="{{ route('admin.fields.show', $field->id) }}" class="text-indigo-600 hover:text-indigo-900 inline-flex items-center">
-                                            <i class="fas fa-eye mr-2"></i> View
+
+                                <td class="px-4 py-4">
+                                    <div class="font-bold text-gray-900 text-base mb-1">{{ $field->name }}</div>
+                                    <div class="text-xs text-blue-600 font-semibold mb-1"><i class="fas fa-map-marker-alt mr-1"></i> {{ $field->location }}</div>
+                                    <p class="text-sm text-gray-500 line-clamp-1">{{ $field->description ?: 'Tidak ada deskripsi.' }}</p>
+                                </td>
+
+                                <td class="px-4 py-4 whitespace-nowrap text-center">
+                                    <span class="font-bold text-gray-900">Rp {{ number_format($field->price_per_hour, 0, ',', '.') }}</span>
+                                </td>
+
+                                <td class="px-4 py-4 whitespace-nowrap text-center text-sm font-medium">
+                                    <div class="flex items-center justify-center space-x-2">
+                                        <a href="{{ route('admin.fields.show', $field->id) }}" class="text-indigo-600 hover:text-indigo-900 bg-indigo-50 hover:bg-indigo-100 p-2 rounded-lg transition-colors" title="Lihat">
+                                            <i class="fas fa-eye"></i>
                                         </a>
-                                        <a href="{{ route('admin.fields.edit', $field->id) }}" class="text-indigo-600 hover:text-indigo-900 inline-flex items-center">
-                                            <i class="fas fa-edit mr-2"></i> Edit
+                                        <a href="{{ route('admin.fields.edit', $field->id) }}" class="text-blue-600 hover:text-blue-900 bg-blue-50 hover:bg-blue-100 p-2 rounded-lg transition-colors" title="Edit">
+                                            <i class="fas fa-edit"></i>
                                         </a>
-                                        <form action="{{ route('admin.fields.destroy', $field->id) }}" method="POST" onsubmit="return confirm('Apakah Anda yakin ingin menghapus lapangan ini?');" class="inline">
+                                        <form action="{{ route('admin.fields.destroy', $field->id) }}" method="POST" onsubmit="return confirm('Apakah Anda yakin ingin menghapus lapangan ini?');">
                                             @csrf
                                             @method('DELETE')
-                                            <button type="submit" class="text-red-600 hover:text-red-900 inline-flex items-center">
-                                                <i class="fas fa-trash-alt mr-2"></i> Hapus
+                                            <button type="submit" class="text-red-600 hover:text-red-900 bg-red-50 hover:bg-red-100 p-2 rounded-lg transition-colors" title="Hapus">
+                                                <i class="fas fa-trash-alt"></i>
                                             </button>
                                         </form>
                                     </div>
@@ -62,6 +76,8 @@
                     </table>
                 </div>
             </div>
+
         </div>
     </div>
+</div>
 @endsection
