@@ -13,14 +13,19 @@
             </a>
 
             <a href="{{ route('admin.reports.financial') }}" class="flex items-center text-white opacity-75 hover:opacity-100 py-4 pl-6 nav-item">
-    <i class="fas fa-chart-line mr-3"></i>
-    Laporan Keuangan
-</a>
+            <i class="fas fa-chart-line mr-3"></i>
+            Laporan Keuangan
+            </a>
+
+            <a href="{{ route('admin.memberships.index') }}" class="flex items-center text-white opacity-75 hover:opacity-100 py-4 pl-6 nav-item">
+            <i class="fas fa-chart-line mr-3"></i>
+            Memberships
+            </a>
 
             <a href="{{ route('admin.add-ons.index') }}" class="flex items-center text-white opacity-75 hover:opacity-100 py-4 pl-6 nav-item">
-    <i class="fas fa-box-open mr-3"></i>
-    Fasilitas Tambahan
-</a>
+            <i class="fas fa-box-open mr-3"></i>
+            Fasilitas Tambahan
+            </a>
 
             <!-- Tabel User -->
             <a href="{{ route('admin.users.index') }}"
@@ -58,9 +63,9 @@
             </a>
 
             <a href="{{ route('admin.promo-codes.index') }}" class="flex items-center text-white opacity-75 hover:opacity-100 py-4 pl-6 nav-item">
-    <i class="fas fa-ticket-alt mr-3"></i>
-    Kode Promo
-</a>
+            <i class="fas fa-ticket-alt mr-3"></i>
+            Kode Promo
+            </a>
 
             <a href="{{ route('admin.settings.index') }}"
             class="flex items-center {{ request()->routeIs('admin.settings.index') ? 'active-nav-link' : 'opacity-75 hover:opacity-100' }} py-4 pl-6 nav-item">
@@ -68,6 +73,10 @@
                 Pengaturan Web</p>
             </a>
 
+            <a href="{{ route('admin.activity-logs.index') }}" class="flex items-center text-white opacity-75 hover:opacity-100 py-4 pl-6 nav-item">
+            <i class="fas fa-ticket-alt mr-3"></i>
+            log aktivitas
+            </a>
 
 
             <!-- Log Out -->

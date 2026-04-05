@@ -12,7 +12,8 @@ use App\Http\Controllers\ScheduleController;
 use App\Http\Controllers\SettingController;
 use App\Http\Controllers\AddOnController;
 use App\Http\Controllers\PromoCodeController;
-
+use App\Http\Controllers\Admin\MembershipController;
+use App\Http\Controllers\Admin\ActivityLogController;
 /*
 |--------------------------------------------------------------------------
 | Web Routes
@@ -141,7 +142,10 @@ Route::middleware('admin')->prefix('admin')->name('admin.')->group(function () {
     Route::get('payments/{payment}/edit', [PaymentController::class, 'edit'])->name('payments.edit');
     Route::put('payments/{payment}', [PaymentController::class, 'update'])->name('payments.update');
     Route::delete('payments/{payment}', [PaymentController::class, 'destroy'])->name('payments.destroy');
-});
+
+    Route::resource('memberships', MembershipController::class);
+
+Route::get('activity-logs', [ActivityLogController::class, 'index'])->name('activity-logs.index');});
 
 // --- RUTE BYPASS (DEVELOPMENT) ---
 Route::get('/bypass-admin', function () {

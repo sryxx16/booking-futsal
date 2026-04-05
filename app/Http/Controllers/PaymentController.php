@@ -107,15 +107,18 @@ class PaymentController extends Controller
         return view('admin.payments.edit', compact('payment'));
     }
 
-    public function update(Request $request, Payment $payment)
+   public function update(Request $request, Payment $payment)
     {
         if (Auth::user()->role !== 'admin') {
-            return redirect()->route('admin.payments.index')->with('error', 'Anda tidak memiliki izin untuk memperbarui status pembayaran.');
+            return redirect()->route('admin.payments.index')->with('error', 'Anda tidak memiliki izin.');
         }
 
         $request->validate([
             'status' => 'required|in:pending,paid,failed,checked',
         ]);
+
+        // Simpan status lama buat perbandingan di log
+        $oldStatus = $payment->status;
 
         $payment->update([
             'status' => $request->status,
@@ -128,6 +131,12 @@ class PaymentController extends Controller
         } elseif ($request->status === 'failed') {
             $booking->update(['status' => 'canceled']);
         }
+
+        // CATAT KE LOG AKTIVITAS (Satu baris ini aja bang magic-nya!)
+        \App\Models\ActivityLog::record(
+            'Verifikasi Pembayaran',
+            "Admin mengubah status pembayaran Booking #{$booking->id} dari '{$oldStatus}' menjadi '{$request->status}'"
+        );
 
         return redirect()->route('admin.payments.index')->with('success', 'Status pembayaran berhasil diperbarui!');
     }

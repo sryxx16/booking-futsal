@@ -24,11 +24,12 @@ class Kernel extends ConsoleKernel
     protected $commands = [
         Commands\GenerateRecurringSchedules::class,
     ];
-    
-    protected function schedule(Schedule $schedule)
+
+   protected function schedule(Schedule $schedule)
     {
-        $schedule->command('schedules:generate')->weekly(); // Jalankan setiap minggu
+        // Hapus baris 'schedules:generate' yang lama karena udah diganti
         $schedule->command('bookings:cancel-expired')->everyMinute();
+        $schedule->command('schedules:generate-recurring')->daily();
     }
-    
+
 }
