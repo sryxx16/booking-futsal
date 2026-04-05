@@ -6,6 +6,7 @@ use App\Models\User;
 use App\Models\Field;
 use App\Models\Booking;
 use App\Models\Schedule;
+use App\Models\AddOn;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -21,33 +22,38 @@ class BookingController extends Controller
 
     public function create()
     {
-        // Ambil semua data lapangan dan jadwal
         $users = User::all();
-        $fields = Field::all(); // Ambil semua data lapangan
-        $schedules = Schedule::where('is_available', true)->get(); // Ambil semua jadwal
+        $fields = Field::all();
+        $schedules = Schedule::where('is_available', true)->get();
 
-        // Kirim data ke view create
-        return view('admin.bookings.create', compact('users','fields', 'schedules'));
+        // --- TAMBAHAN BARU: Ambil add-ons yang stoknya lebih dari 0 ---
+        $addOns = AddOn::where('stock', '>', 0)->get();
+
+        // Kirim $addOns ke view
+        return view('admin.bookings.create', compact('users','fields', 'schedules', 'addOns'));
     }
 
     public function store(Request $request)
     {
-        // Validasi input
+        // Validasi input ditambah validasi add_ons
         $request->validate([
             'field_id' => 'required|exists:fields,id',
             'date' => 'required|date',
-            'schedule_id' => 'required|exists:schedules,id', // pastikan memilih jadwal yang ada
+            'schedule_id' => 'required|exists:schedules,id',
+            'booking_name' => 'required|string|max:255',
+            'phone_number' => 'required|string|max:20',
+            'add_ons' => 'nullable|array', // Validasi Add-ons
+            'add_ons.*.id' => 'exists:add_ons,id',
+            'add_ons.*.quantity' => 'integer|min:1',
         ]);
 
-        // Mendapatkan jadwal yang dipilih
         $schedule = Schedule::find($request->schedule_id);
         if ($schedule->is_available == 0) {
             return redirect()->back()->with('error', 'Jadwal sudah dipesan.');
         }
 
-        $expiredAt = Carbon::now()->addMinutes(2);
+        $expiredAt = Carbon::now()->addMinutes(15); // Biar nggak kecepatan, saya ubah jadi 15 menit ya
 
-        // Menyimpan booking dengan menambahkan tanggal yang dipilih
         $booking = Booking::create([
             'user_id' => auth()->id(),
             'field_id' => $request->field_id,
@@ -57,28 +63,45 @@ class BookingController extends Controller
             'status' => 'pending',
             'expired_at' => $expiredAt,
         ]);
-        // Memperbarui jadwal untuk menyimpan tanggal booking
+
+        // --- TAMBAHAN BARU: Simpan Add-Ons ke Pivot dan Kurangi Stok ---
+        if ($request->has('add_ons')) {
+            foreach ($request->add_ons as $addonData) {
+                if (isset($addonData['id']) && isset($addonData['quantity'])) {
+                    $addOn = AddOn::find($addonData['id']);
+                    // Pastikan stok mencukupi
+                    if ($addOn && $addOn->stock >= $addonData['quantity']) {
+                        // Simpan ke tabel add_on_booking
+                        $booking->addOns()->attach($addOn->id, [
+                            'quantity' => $addonData['quantity'],
+                            'price' => $addOn->price,
+                        ]);
+                        // Kurangi stok barang
+                        $addOn->decrement('stock', $addonData['quantity']);
+                    }
+                }
+            }
+        }
+        // ---------------------------------------------------------------
+
         $schedule->update([
-            'date' => $request->date,  // Menyimpan tanggal booking ke dalam jadwal
+            'date' => $request->date,
             'is_available' => 0
         ]);
-$pesanWa = "Halo *{$request->booking_name}*! 👋\n\n";
+
+        $pesanWa = "Halo *{$request->booking_name}*! 👋\n\n";
         $pesanWa .= "Booking lapangan futsal kamu berhasil dibuat. Berikut detailnya:\n\n";
         $pesanWa .= "📅 Tanggal: " . \Carbon\Carbon::parse($request->date)->translatedFormat('d F Y') . "\n";
         $pesanWa .= "⏰ Jam: {$schedule->start_time} - {$schedule->end_time}\n";
         $pesanWa .= "⏳ Batas Waktu Bayar: " . \Carbon\Carbon::parse($expiredAt)->format('H:i') . " WIB\n\n";
         $pesanWa .= "Mohon segera selesaikan pembayaran sebelum batas waktu habis ya. Terima kasih! ⚽";
 
-        // Panggil FonnteService
         \App\Services\FonnteService::sendMessage($request->phone_number, $pesanWa);
-        // ==========================================
 
-        // Jika pengguna adalah admin, arahkan ke halaman admin
         if (auth()->user()->role === 'admin') {
             return redirect()->route('admin.bookings.index')->with('success', 'Booking berhasil dibuat!');
         }
 
-        // Jika pengguna adalah user biasa, arahkan ke halaman user
         return redirect()->route('user.administration.index')->with('success', 'Booking berhasil dibuat!');
     }
 

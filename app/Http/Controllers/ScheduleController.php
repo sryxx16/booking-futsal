@@ -25,17 +25,18 @@ class ScheduleController extends Controller
         // Validasi input
         $request->validate([
             'field_id' => 'required|exists:fields,id',
-            'day' => 'required|string|max:10', // Validasi untuk hari
+            'date' => 'required|date', // <-- TAMBAHAN: Validasi Tanggal
+            'day' => 'required|string|max:10',
             'start_time' => 'required|date_format:H:i',
             'end_time' => 'required|date_format:H:i|after:start_time',
-            'is_available' => 'required|boolean',
             'is_available' => 'required|boolean',
         ]);
 
         // Membuat jadwal baru
         Schedule::create([
             'field_id' => $request->field_id,
-            'day' => $request->day, // Simpan hari
+            'date' => $request->date, // <-- TAMBAHAN: Simpan Tanggal
+            'day' => $request->day,
             'start_time' => $request->start_time,
             'end_time' => $request->end_time,
             'is_available' => $request->is_available ? 1 : 0,
@@ -63,12 +64,17 @@ class ScheduleController extends Controller
         $request->validate([
             'field_id' => 'required',
             'date' => 'required|date',
+            'day' => 'required|string', // <-- Tambahkan validasi day
             'start_time' => 'required',
             'end_time' => 'required',
             'is_available' => 'required|boolean',
         ]);
 
-        $schedule->update($request->all());
+        // Simpan semua request, termasuk is_recurring jika dicentang
+        $data = $request->all();
+        $data['is_recurring'] = $request->has('is_recurring') ? 1 : 0; // <-- Tangkap nilai checkbox
+
+        $schedule->update($data);
 
         return redirect()->route('admin.schedules.index')->with('success', 'Schedule updated successfully.');
     }

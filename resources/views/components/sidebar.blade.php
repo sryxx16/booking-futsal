@@ -12,6 +12,11 @@
                 Dashboard
             </a>
 
+            <a href="{{ route('admin.add-ons.index') }}" class="flex items-center text-white opacity-75 hover:opacity-100 py-4 pl-6 nav-item">
+    <i class="fas fa-box-open mr-3"></i>
+    Fasilitas Tambahan
+</a>
+
             <!-- Tabel User -->
             <a href="{{ route('admin.users.index') }}"
                 class="flex items-center {{ request()->routeIs('admin.users.index') ? 'active-nav-link' : 'opacity-75 hover:opacity-100' }} py-4 pl-6 nav-item">

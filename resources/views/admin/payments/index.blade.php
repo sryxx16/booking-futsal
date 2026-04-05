@@ -3,80 +3,95 @@
 @section('title', 'Data Pembayaran | Futsal')
 
 @section('content')
-    <div class="flex">
-        @include('components.sidebar') <!-- Sidebar -->
+<div class="flex min-h-screen bg-gray-50 font-sans text-gray-800">
+    @include('components.sidebar')
 
-        <div class="w-full flex-grow p-6">
-            <h1 class="text-3xl text-black pb-6">Data Pembayaran</h1>
+    <div class="w-full flex-grow p-6 lg:p-10">
+        <div class="max-w-7xl mx-auto">
 
-            <div class="w-full mt-6">
-                <div class="bg-white overflow-auto mx-auto rounded-lg" style="max-width: 1200px;">
-                    <!-- Tabel Pembayaran -->
-                    <table class="min-w-full bg-white mx-auto text-center">
-                        <thead class="bg-gray-800 text-white">
+            <div class="mb-8 flex flex-col md:flex-row md:items-end justify-between gap-4">
+                <div>
+                    <h1 class="text-3xl font-extrabold text-gray-900 tracking-tight">Data Pembayaran</h1>
+                    <p class="mt-2 text-sm text-gray-500">Kelola dan verifikasi seluruh transaksi pembayaran pelanggan.</p>
+                </div>
+                </div>
+
+            <div class="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
+                <div class="overflow-x-auto">
+                    <table class="min-w-full divide-y divide-gray-200">
+                        <thead class="bg-gray-50">
                             <tr>
-                                <th class="py-3 px-4 uppercase font-semibold text-sm">ID Pemesanan</th>
-                                <th class="py-3 px-4 uppercase font-semibold text-sm">Jumlah</th>
-                                <th class="py-3 px-4 uppercase font-semibold text-sm">Metode Pembayaran</th>
-                                <th class="py-3 px-4 uppercase font-semibold text-sm">Status</th>
-                                <th class="py-3 px-4 uppercase font-semibold text-sm">Bukti Pembayaran</th> <!-- Kolom Bukti Pembayaran -->
-                                <th class="py-3 px-4 uppercase font-semibold text-sm">Aksi</th>
+                                <th scope="col" class="px-6 py-4 text-center text-xs font-bold text-gray-500 uppercase tracking-wider">ID Booking</th>
+                                <th scope="col" class="px-6 py-4 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Jumlah (Rp)</th>
+                                <th scope="col" class="px-6 py-4 text-center text-xs font-bold text-gray-500 uppercase tracking-wider">Metode</th>
+                                <th scope="col" class="px-6 py-4 text-center text-xs font-bold text-gray-500 uppercase tracking-wider">Status</th>
+                                <th scope="col" class="px-6 py-4 text-center text-xs font-bold text-gray-500 uppercase tracking-wider">Bukti</th>
+                                <th scope="col" class="px-6 py-4 text-center text-xs font-bold text-gray-500 uppercase tracking-wider">Aksi</th>
                             </tr>
                         </thead>
-                        <tbody class="text-gray-700">
-                            @foreach($payments as $payment)
-                            <tr class="border-b">
-                                <td class="py-3 px-4">{{ $payment->booking_id }}</td>
-                                <td class="py-3 px-4">{{ number_format($payment->amount, 2, ',', '.') }}</td>
-                                <td class="py-3 px-4">{{ $payment->payment_method }}</td>
-                                <td class="py-3 px-4">
+                        <tbody class="bg-white divide-y divide-gray-200">
+                            @forelse($payments as $payment)
+                            <tr class="hover:bg-gray-50 transition-colors text-sm">
+                                <td class="px-6 py-4 whitespace-nowrap text-center font-bold text-gray-900">
+                                    #{{ $payment->booking_id }}
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap font-semibold text-blue-600">
+                                    {{ number_format($payment->amount, 0, ',', '.') }}
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap text-center">
+                                    <span class="px-3 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-800 uppercase tracking-wider">
+                                        {{ $payment->payment_method }}
+                                    </span>
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap text-center">
                                     @if($payment->status == 'paid')
-                                        <span class="text-green-500 font-semibold">Paid</span>
+                                        <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-bold bg-green-100 text-green-800">Lunas (Paid)</span>
                                     @elseif($payment->status == 'pending')
-                                        <span class="text-yellow-500 font-semibold">Pending</span>
+                                        <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-bold bg-yellow-100 text-yellow-800">Menunggu</span>
                                     @elseif($payment->status == 'checked')
-                                        <span class="text-blue-500 font-semibold">Check</span>
+                                        <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-bold bg-blue-100 text-blue-800">Pengecekan</span>
                                     @else
-                                        <span class="text-red-500 font-semibold">Failed</span>
+                                        <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-bold bg-red-100 text-red-800">Gagal</span>
                                     @endif
                                 </td>
-                                
-                                <!-- Menampilkan Bukti Pembayaran -->
-                                <td class="py-3 px-4">
+                                <td class="px-6 py-4 whitespace-nowrap text-center">
                                     @if($payment->payment_proof)
-                                        <a href="{{ asset('storage/' . $payment->payment_proof) }}" target="_blank" class="text-blue-500">
-                                           Lihat Bukti Pembayaran
+                                        <a href="{{ asset('storage/' . $payment->payment_proof) }}" target="_blank" class="text-blue-500 hover:text-blue-700 font-medium flex items-center justify-center">
+                                            <i class="fas fa-file-image mr-1"></i> Lihat
                                         </a>
                                     @else
-                                        <span class="text-red-500">Tidak Ada Bukti</span>
+                                        <span class="text-gray-400 italic text-xs">Kosong</span>
                                     @endif
                                 </td>
-                                
-                                <td class="py-3 px-4 flex justify-center space-x-2">
-                                    <!-- Tombol View -->
-                                    <a href="{{ route('admin.payments.show', $payment->id) }}" class="text-indigo-600 hover:text-indigo-900">
-                                        <i class="fas fa-eye mr-2"></i> View
-                                    </a>
-
-                                    <a href="{{ route('admin.payments.edit', $payment->id) }}" class="text-green-600 hover:text-green-900">
-                                        <i class="fas fa-edit mr-2"></i> Edit
-                                    </a>
-                                    
-                                    <!-- Tombol Hapus dengan konfirmasi -->
-                                    <form action="{{ route('admin.payments.destroy', $payment->id) }}" method="POST" onsubmit="return confirm('Apakah Anda yakin ingin menghapus data pembayaran ini?');">
-                                        @csrf
-                                        @method('DELETE')
-                                        <button type="submit" class="text-red-600 hover:text-red-900">
-                                            <i class="fas fa-trash-alt mr-2"></i> Hapus
-                                        </button>
-                                    </form>
+                                <td class="px-6 py-4 whitespace-nowrap text-center text-sm font-medium">
+                                    <div class="flex items-center justify-center space-x-3">
+                                        <a href="{{ route('admin.payments.edit', $payment->id) }}" class="text-blue-600 hover:text-blue-900 bg-blue-50 hover:bg-blue-100 p-2 rounded-lg transition-colors" title="Edit Status">
+                                            <i class="fas fa-edit"></i>
+                                        </a>
+                                        <form action="{{ route('admin.payments.destroy', $payment->id) }}" method="POST" onsubmit="return confirm('Apakah Anda yakin ingin menghapus data pembayaran ini?');">
+                                            @csrf
+                                            @method('DELETE')
+                                            <button type="submit" class="text-red-600 hover:text-red-900 bg-red-50 hover:bg-red-100 p-2 rounded-lg transition-colors" title="Hapus Data">
+                                                <i class="fas fa-trash-alt"></i>
+                                            </button>
+                                        </form>
+                                    </div>
                                 </td>
                             </tr>
-                            @endforeach
+                            @empty
+                            <tr>
+                                <td colspan="6" class="px-6 py-10 text-center">
+                                    <div class="text-gray-400 mb-3"><i class="fas fa-receipt text-4xl"></i></div>
+                                    <p class="text-gray-500 font-medium text-sm">Belum ada data pembayaran masuk.</p>
+                                </td>
+                            </tr>
+                            @endforelse
                         </tbody>
                     </table>
                 </div>
             </div>
+
         </div>
     </div>
+</div>
 @endsection

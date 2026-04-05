@@ -10,6 +10,7 @@ use App\Http\Controllers\PaymentController;
 use App\Http\Controllers\WeatherController;
 use App\Http\Controllers\ScheduleController;
 use App\Http\Controllers\SettingController;
+use App\Http\Controllers\AddOnController;
 
 /*
 |--------------------------------------------------------------------------
@@ -75,6 +76,11 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     // Rute untuk membatalkan booking
     Route::post('user/bookings/cancel/{bookingId}', [BookingController::class, 'cancel'])->name('user.bookings.cancel');
+
+    Route::get('/admin/laporan/export-pdf', [AdminController::class, 'exportPdf'])->name('admin.export.pdf');
+
+
+    Route::resource('/admin/add-ons', AddOnController::class, ['as' => 'admin']);
 
     Route::get('/user/bookings/scheduleDetails/{scheduleId}', [BookingController::class, 'scheduleDetails']);
 

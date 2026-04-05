@@ -19,6 +19,13 @@ class Booking extends Model
         'expired_at'
     ];
 
+    public function addOns()
+    {
+        return $this->belongsToMany(AddOn::class)
+                    ->withPivot('quantity', 'price')
+                    ->withTimestamps();
+    }
+
     public function user()
     {
         return $this->belongsTo(User::class);

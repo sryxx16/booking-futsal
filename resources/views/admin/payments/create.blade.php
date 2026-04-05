@@ -1,62 +1,101 @@
 @extends('layouts.admin')
 
-@section('title', 'Pembayaran - Detail Booking')
+@section('title', 'Proses Pembayaran | Futsal')
 
 @section('content')
-    <div class="flex">
-        @include('components.sidebar')
+<div class="flex min-h-screen bg-gray-50 font-sans text-gray-800">
+    @include('components.sidebar')
 
-        <div class="w-full flex-grow p-6">
-            <h1 class="text-3xl text-black pb-6">Pembayaran - Detail Booking</h1>
+    <div class="w-full flex-grow p-6 lg:p-10">
+        <div class="max-w-4xl mx-auto">
 
-            <div class="bg-white p-6 rounded shadow-md">
-                <h2 class="text-2xl font-bold">Detail Booking</h2>
-                <p><strong>Lapangan:</strong> {{ $booking->field->name }}</p>
-                <p><strong>Jadwal:</strong> {{ \Carbon\Carbon::parse($booking->schedule->date)->format('d M Y') }}
-                    ({{ \Carbon\Carbon::parse ($booking->schedule->start_time)->format('H:i') }} - {{ \Carbon\Carbon::parse($booking->schedule->end_time)->format('H:i') }})</p>
-                <p><strong>Total Harga:</strong> Rp {{ number_format($totalPrice, 2, ',', '.') }}</p>
+            <div class="mb-8 flex flex-col md:flex-row md:items-end justify-between gap-4">
+                <div>
+                    <h1 class="text-3xl font-extrabold text-gray-900 tracking-tight">Proses Pembayaran</h1>
+                    <p class="mt-2 text-sm text-gray-500">Selesaikan transaksi pembayaran untuk ID Booking #{{ $booking->id }}.</p>
+                </div>
+                <a href="{{ url()->previous() }}" class="inline-flex items-center text-sm font-medium text-gray-500 hover:text-blue-600 transition-colors">
+                    <i class="fas fa-arrow-left mr-2"></i> Kembali
+                </a>
+            </div>
 
-                <form action="{{ route('admin.payments.store', $booking->id) }}" method="POST" enctype="multipart/form-data">
-                    @csrf
-                    <div class="mt-4">
-                        <label for="payment_method" class="block text-sm font-medium text-gray-700">Metode Pembayaran</label>
-                        <select name="payment_method" id="payment_method" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" onchange="toggleBankDetails()">
-                            <option value="cash">Cash (Bayar Langsung)</option>
-                            <option value="transfer">Transfer ke Bank</option>
-                        </select>
-                    </div>
+            <div class="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden flex flex-col lg:flex-row">
 
-                    <!-- Bagian untuk Menampilkan Transfer Bank -->
-                    <div id="bank_details_section" class="mt-4" style="display: none;">
-                        <h2 class="font-bold text-blue-600">Transfer Bank BNI</h2>
-                        <img src="/assets/img/bank.png" alt="Logo BNI" class="h-10">
-                        <p>Nomor Rekening: 123-456-789</p>
+                <div class="lg:w-1/2 bg-blue-50/50 p-8 border-b lg:border-b-0 lg:border-r border-gray-200">
+                    <h2 class="text-lg font-bold text-gray-800 mb-6 flex items-center">
+                        <i class="fas fa-file-invoice text-blue-600 mr-2"></i> Rincian Pesanan
+                    </h2>
 
-                        <div class="mt-4">
-                            <label for="payment_proof" class="block text-gray-700">Upload Bukti Pembayaran</label>
-                            <input type="file" name="payment_proof" id="payment_proof" accept="image/*" class="mt-1 block w-full bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring focus:ring-opacity-50">
+                    <div class="space-y-4 text-sm">
+                        <div>
+                            <p class="text-gray-500 font-medium mb-1">Lapangan</p>
+                            <p class="font-bold text-gray-900 text-lg">{{ $booking->field->name }}</p>
+                        </div>
+                        <div>
+                            <p class="text-gray-500 font-medium mb-1">Tanggal Main</p>
+                            <p class="font-bold text-gray-900">{{ \Carbon\Carbon::parse($booking->schedule->date)->translatedFormat('d F Y') }}</p>
+                        </div>
+                        <div>
+                            <p class="text-gray-500 font-medium mb-1">Waktu</p>
+                            <p class="font-bold text-gray-900">{{ \Carbon\Carbon::parse($booking->schedule->start_time)->format('H:i') }} - {{ \Carbon\Carbon::parse($booking->schedule->end_time)->format('H:i') }} WIB</p>
+                        </div>
+                        <div class="pt-4 border-t border-gray-200 mt-4">
+                            <p class="text-gray-500 font-medium mb-1">Total Tagihan</p>
+                            <p class="font-black text-3xl text-blue-600">Rp {{ number_format($totalPrice, 0, ',', '.') }}</p>
                         </div>
                     </div>
+                </div>
 
-                    <button type="submit" class="mt-6 inline-flex items-center bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-700">
-                        <i class="fas fa-save"></i> Simpan Pembayaran
-                    </button>
-                </form>
+                <div class="lg:w-1/2 p-8">
+                    <form action="{{ route('admin.payments.store', $booking->id) }}" method="POST" enctype="multipart/form-data">
+                        @csrf
+
+                        <div class="space-y-6">
+                            <div>
+                                <label for="payment_method" class="block text-sm font-semibold text-gray-700 mb-2">Metode Pembayaran</label>
+                                <select name="payment_method" id="payment_method" class="block w-full rounded-xl border-gray-300 bg-gray-50 py-3 px-4 shadow-sm focus:border-blue-500 focus:ring-blue-500 focus:bg-white transition-colors sm:text-sm" onchange="toggleBankDetails()">
+                                    <option value="cash">Cash (Bayar di Tempat)</option>
+                                    <option value="transfer">Transfer Bank (Upload Bukti)</option>
+                                </select>
+                            </div>
+
+                            <div id="bank_details_section" class="hidden bg-gray-50 p-5 rounded-xl border border-gray-200">
+                                <div class="flex items-center justify-between mb-4">
+                                    <div>
+                                        <h3 class="font-bold text-gray-900">Transfer ke BNI</h3>
+                                        <p class="text-sm font-medium text-gray-600 mt-1">No. Rek: <span class="text-blue-600 font-bold text-lg select-all">123-456-789</span></p>
+                                    </div>
+                                    <img src="/assets/img/bank.png" alt="BNI" class="h-8">
+                                </div>
+
+                                <div class="mt-4">
+                                    <label for="payment_proof" class="block text-sm font-semibold text-gray-700 mb-2">Upload Bukti Transfer</label>
+                                    <input type="file" name="payment_proof" id="payment_proof" accept="image/*" class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 transition-colors">
+                                </div>
+                            </div>
+                        </div>
+
+                        <button type="submit" class="mt-8 w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3.5 px-4 rounded-xl shadow-md transform transition active:scale-95 flex justify-center items-center">
+                            <i class="fas fa-check-circle mr-2"></i> Konfirmasi Pembayaran
+                        </button>
+                    </form>
+                </div>
+
             </div>
         </div>
     </div>
+</div>
 
-    <script>
-        // Fungsi untuk menampilkan atau menyembunyikan informasi rekening bank
-        function toggleBankDetails() {
-            const paymentMethod = document.getElementById('payment_method').value;
-            const bankDetailsSection = document.getElementById('bank_details_section');
+<script>
+    function toggleBankDetails() {
+        const paymentMethod = document.getElementById('payment_method').value;
+        const bankDetailsSection = document.getElementById('bank_details_section');
 
-            if (paymentMethod === 'transfer') {
-                bankDetailsSection.style.display = 'block'; // Menampilkan bagian bank
-            } else {
-                bankDetailsSection.style.display = 'none'; // Menyembunyikan bagian bank
-            }
+        if (paymentMethod === 'transfer') {
+            bankDetailsSection.classList.remove('hidden');
+        } else {
+            bankDetailsSection.classList.add('hidden');
         }
-    </script>
+    }
+</script>
 @endsection

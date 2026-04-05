@@ -78,12 +78,26 @@
 
             <!-- Statistik Section -->
             <div class="mt-12">
-                <h2 class="text-2xl font-semibold text-gray-700 mb-6">Statistik Payment</h2>
+                <div class="flex justify-between items-center mb-6">
+                    <h2 class="text-2xl font-semibold text-gray-700">Statistik Payment</h2>
 
-                <!-- Grafik Payment -->
-                <div class="bg-white p-6 rounded-lg shadow-lg">
-                    <h3 class="text-lg font-semibold text-gray-700 mb-4">Statistik Payment</h3>
-                    <canvas id="paymentChart" class="w-full"></canvas>
+                    <a href="{{ route('admin.export.pdf') }}" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded shadow-lg flex items-center">
+                        <i class="fas fa-file-pdf mr-2"></i> Ekspor Laporan PDF
+                    </a>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+
+                    <div class="bg-white p-6 rounded-lg shadow-lg">
+                        <h3 class="text-lg font-semibold text-gray-700 mb-4">Status Transaksi</h3>
+                        <canvas id="paymentChart" class="w-full"></canvas>
+                    </div>
+
+                    <div class="bg-white p-6 rounded-lg shadow-lg">
+                        <h3 class="text-lg font-semibold text-gray-700 mb-4">Pendapatan Bulanan ({{ date('Y') }})</h3>
+                        <canvas id="revenueChart" class="w-full"></canvas>
+                    </div>
+
                 </div>
             </div>
         </div>
@@ -138,6 +152,42 @@
                                 weight: 'bold'
                             },
                             color: '#4A5568'
+                        }
+                    }
+                }
+            }
+        });
+
+        // Grafik Pendapatan Bulanan
+        const revenueCtx = document.getElementById('revenueChart').getContext('2d');
+        new Chart(revenueCtx, {
+            type: 'line',
+            data: {
+                labels: ['Jan', 'Feb', 'Mac', 'Apr', 'Mei', 'Jun', 'Jul', 'Ogo', 'Sep', 'Okt', 'Nov', 'Dis'],
+                datasets: [{
+                    label: 'Jumlah Pendapatan (Rp)',
+                    data: @json($revenueData),
+                    borderColor: '#3b82f6', // Warna biru
+                    backgroundColor: 'rgba(59, 130, 246, 0.2)',
+                    borderWidth: 2,
+                    fill: true,
+                    tension: 0.3 // Melengkungkan sedikit garisan graf
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: {
+                        display: false
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: {
+                            callback: function(value) {
+                                return 'Rp ' + value.toLocaleString('id-ID');
+                            }
                         }
                     }
                 }
