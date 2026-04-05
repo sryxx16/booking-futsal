@@ -17,5 +17,8 @@ class Setting extends Model
         'email',
         'description',
         'open_hours',
+        'bank_name',     // PASTIKAN 3 BARIS INI ADA
+        'bank_account',  // PASTIKAN 3 BARIS INI ADA
+        'bank_owner',    // PASTIKAN 3 BARIS INI ADA
     ];
 }

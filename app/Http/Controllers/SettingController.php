@@ -20,13 +20,16 @@ class SettingController extends Controller
     {
         // Validasi inputan
         $validated = $request->validate([
-            'app_name' => 'nullable|string|max:255',
+            'app_name' => 'required|string|max:255',
             'whatsapp_number' => 'nullable|string|max:20',
             'address' => 'nullable|string',
             'google_maps_link' => 'nullable|string',
             'email' => 'nullable|email|max:255',
             'description' => 'nullable|string',
             'open_hours' => 'nullable|string|max:255',
+            'bank_name' => 'nullable|string|max:255',     // Validasi baru
+            'bank_account' => 'nullable|string|max:255',  // Validasi baru
+            'bank_owner' => 'nullable|string|max:255',    // Validasi baru
         ]);
 
         // Cek apakah data setting sudah ada? Kalau ada di-update, kalau belum di-create

@@ -8,7 +8,6 @@
 <div class="flex flex-col p-6 bg-gray-100 min-h-screen">
     <h1 class="text-3xl font-bold text-gray-800 mb-6 text-center">Riwayat Booking</h1>
 
-    <!-- Container Card Riwayat Booking -->
     @if($bookings->isEmpty())
         <div class="text-center text-gray-600">
             <p>Belum ada riwayat booking yang tersedia.</p>
@@ -17,7 +16,6 @@
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             @foreach($bookings as $booking)
             <div class="bg-white rounded-lg shadow-md p-4">
-                <!-- Header Card -->
                 <div class="mb-2">
                     <h2 class="text-lg font-semibold text-gray-700">{{ $booking->field->name }}</h2>
                     <p class="text-sm text-gray-500">
@@ -26,12 +24,11 @@
                     </p>
                 </div>
 
-                <!-- Detail Booking -->
                 <div class="mb-4 space-y-2">
                     <p class="text-gray-600"><span class="font-medium">Atas Nama:</span> {{ $booking->booking_name }}</p>
                     <p class="text-gray-600"><span class="font-medium">No Telepon:</span> {{ $booking->phone_number }}</p>
                     <p class="text-gray-600"><span class="font-medium">Harga:</span> Rp{{ number_format($booking->field->price_per_hour, 0, ',', '.') }} / jam</p>
-                    <p class="text-gray-600"><span class="font-medium">Total Harga:</span> 
+                    <p class="text-gray-600"><span class="font-medium">Total Harga:</span>
                         Rp{{ number_format((\Carbon\Carbon::parse($booking->schedule->end_time)->diffInHours(\Carbon\Carbon::parse($booking->schedule->start_time))) * $booking->field->price_per_hour, 0, ',', '.') }}
                     </p>
                     <p class="text-gray-600">
@@ -40,7 +37,7 @@
                             {{ \Carbon\Carbon::parse($booking->expired_at)->diffForHumans() }}
                         </span>
                     </p>
-                    <p class="text-gray-600"><span class="font-medium">Status:</span> 
+                    <p class="text-gray-600"><span class="font-medium">Status:</span>
                         @if($booking->payment && $booking->payment->status == 'paid')
                             <span class="text-green-500 font-semibold">Sudah Dibayar</span>
                         @elseif($booking->payment && $booking->payment->status == 'failed')
@@ -51,9 +48,9 @@
                             <span class="text-yellow-500 font-semibold">Menunggu Pembayaran</span>
                         @endif
                     </p>
-                    
+
                     <p class="text-gray-600">
-                        <span class="font-medium">Bukti Pembayaran:</span> 
+                        <span class="font-medium">Bukti Pembayaran:</span>
                         @if($booking->payment && $booking->payment->payment_proof)
                             <a href="{{ asset('storage/' . $booking->payment->payment_proof) }}" target="_blank" class="text-blue-500">
                                 Lihat Bukti Pembayaran
@@ -64,7 +61,6 @@
                     </p>
                 </div>
 
-                <!-- Tombol Aksi Pembayaran -->
                 @if($booking->status == 'pending' && (!$booking->payment || ($booking->payment->status == 'pending')))
                 <button class="w-full bg-blue-500 hover:bg-blue-700 text-white py-2 px-4 rounded-lg" onclick="openPaymentModal({{ $booking->id }})">
                     Bayar Sekarang
@@ -83,7 +79,6 @@
                 </button>
                 @endif
 
-                <!-- Tombol Batalkan Pemesanan -->
                 @if($booking->status == 'pending' && (!$booking->payment || $booking->payment->status == 'pending'))
                 <form action="{{ route('user.bookings.cancel', $booking->id) }}" method="POST" class="mt-4">
                     @csrf
@@ -99,7 +94,6 @@
     @endif
 </div>
 
-<!-- Modal Pilih Metode Pembayaran -->
 <div id="paymentModal" class="fixed inset-0 bg-gray-500 bg-opacity-75 flex justify-center items-center hidden">
     <div class="bg-white rounded-lg p-6 w-1/3">
         <h2 class="text-xl font-semibold mb-4">Pilih Metode Pembayaran</h2>
@@ -114,12 +108,25 @@
                 </select>
             </div>
 
+            @php
+                $setting = \App\Models\Setting::first();
+            @endphp
+
             <div id="bank_details_section" class="mb-4 hidden">
-                <h2 class="font-bold text-blue-600">Transfer Bank BNI</h2>
-                <p>Nomor Rekening: 123-456-789</p>
+                <div class="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
+                    <h2 class="font-bold text-blue-700 mb-2 flex items-center">
+                        <i class="fas fa-university mr-2"></i> Informasi Transfer Bank
+                    </h2>
+                    <ul class="text-sm text-gray-700 space-y-1">
+                        <li>Bank: <span class="font-semibold">{{ $setting->bank_name ?? 'Belum diatur' }}</span></li>
+                        <li>No. Rekening: <span class="font-bold text-lg text-gray-900 tracking-wider">{{ $setting->bank_account ?? '-' }}</span></li>
+                        <li>Atas Nama: <span class="font-semibold">{{ $setting->bank_owner ?? '-' }}</span></li>
+                    </ul>
+                </div>
+
                 <div class="mt-4">
-                    <label for="payment_proof" class="block text-gray-700">Upload Bukti Pembayaran</label>
-                    <input type="file" name="payment_proof" id="payment_proof" accept="image/*" class="mt-1 block w-full">
+                    <label for="payment_proof" class="block text-sm font-medium text-gray-700 mb-2">Upload Bukti Pembayaran</label>
+                    <input type="file" name="payment_proof" id="payment_proof" accept="image/*" class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100">
                 </div>
             </div>
 
@@ -131,88 +138,80 @@
     </div>
 </div>
 
-
 <script>
     document.querySelectorAll('form').forEach(form => {
-    form.addEventListener('submit', function (event) {
-        // Memastikan form adalah untuk membatalkan pesanan
-        if (form.querySelector('button').innerText === "Batalkan Booking") {
-            event.preventDefault();
-            Swal.fire({
-                title: 'Batalkan Pesanan',
-                text: 'Apakah Anda yakin ingin membatalkan pemesanan?',
-                icon: 'warning',
-                showCancelButton: true,
-                confirmButtonText: 'Ya, Batalkan Pesanan Sekarang!',
-                cancelButtonText: 'Batal',
-                customClass: {
-                    confirmButton: 'bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-4 rounded',
-                    cancelButton: 'bg-gray-300 hover:bg-gray-400 text-black font-bold py-2 px-4 rounded'
-                }
-            }).then(result => {
-                if (result.isConfirmed) {
-                    form.submit();
-
-                    // Menampilkan SweetAlert jika pembatalan berhasil
-                    Swal.fire({
-                        title: 'Pesanan Dibatalkan',
-                        text: 'Pesanan Anda telah berhasil dibatalkan.',
-                        icon: 'success',
-                        showConfirmButton: false,  // Menghilangkan tombol konfirmasi
-                        timer: 3000, // Durasi tampilkan alert
-                        didOpen: () => {
-                            Swal.getPopup().classList.add('animate__animated', 'animate__fadeIn');
-                        }
-                    });
-                }
-            });
-        }
-        // Memastikan form adalah untuk pembayaran
-        else if (form.querySelector('button').innerText === "Simpan Pembayaran") {
-            event.preventDefault();
-            Swal.fire({
-                title: 'Konfirmasi Pembayaran',
-                text: 'Apakah Anda yakin ingin melakukan pembayaran?',
-                icon: 'info',
-                showCancelButton: true,
-                confirmButtonText: 'Ya, Lanjutkan Pembayaran',
-                cancelButtonText: 'Batal',
-                customClass: {
-                    confirmButton: 'bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded',
-                    cancelButton: 'bg-gray-300 hover:bg-gray-400 text-black font-bold py-2 px-4 rounded'
-                }
-            }).then(result => {
-                if (result.isConfirmed) {
-                    form.submit();
-
-                    // Menampilkan SweetAlert jika pembayaran berhasil
-                    Swal.fire({
-                        title: 'Pembayaran Berhasil',
-                        text: 'Pembayaran Anda telah berhasil diproses.' ,
-                        icon: 'success',
-                        showConfirmButton: false,  // Menghilangkan tombol konfirmasi
-                        timer: 3000, // Durasi tampilkan alert
-                        didOpen: () => {
-                            Swal.getPopup().classList.add('animate__animated', 'animate__fadeIn');
-                        }
-                    });
-                }
-            });
-        }
+        form.addEventListener('submit', function (event) {
+            // Memastikan form adalah untuk membatalkan pesanan
+            if (form.querySelector('button').innerText === "Batalkan Booking") {
+                event.preventDefault();
+                Swal.fire({
+                    title: 'Batalkan Pesanan',
+                    text: 'Apakah Anda yakin ingin membatalkan pemesanan?',
+                    icon: 'warning',
+                    showCancelButton: true,
+                    confirmButtonText: 'Ya, Batalkan Pesanan Sekarang!',
+                    cancelButtonText: 'Batal',
+                    customClass: {
+                        confirmButton: 'bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-4 rounded',
+                        cancelButton: 'bg-gray-300 hover:bg-gray-400 text-black font-bold py-2 px-4 rounded'
+                    }
+                }).then(result => {
+                    if (result.isConfirmed) {
+                        form.submit();
+                        Swal.fire({
+                            title: 'Pesanan Dibatalkan',
+                            text: 'Pesanan Anda telah berhasil dibatalkan.',
+                            icon: 'success',
+                            showConfirmButton: false,
+                            timer: 3000,
+                            didOpen: () => {
+                                Swal.getPopup().classList.add('animate__animated', 'animate__fadeIn');
+                            }
+                        });
+                    }
+                });
+            }
+            // Memastikan form adalah untuk pembayaran
+            else if (form.querySelector('button').innerText === "Simpan Pembayaran") {
+                event.preventDefault();
+                Swal.fire({
+                    title: 'Konfirmasi Pembayaran',
+                    text: 'Apakah Anda yakin ingin melakukan pembayaran?',
+                    icon: 'info',
+                    showCancelButton: true,
+                    confirmButtonText: 'Ya, Lanjutkan Pembayaran',
+                    cancelButtonText: 'Batal',
+                    customClass: {
+                        confirmButton: 'bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded',
+                        cancelButton: 'bg-gray-300 hover:bg-gray-400 text-black font-bold py-2 px-4 rounded'
+                    }
+                }).then(result => {
+                    if (result.isConfirmed) {
+                        form.submit();
+                        Swal.fire({
+                            title: 'Pembayaran Berhasil',
+                            text: 'Pembayaran Anda telah berhasil diproses.' ,
+                            icon: 'success',
+                            showConfirmButton: false,
+                            timer: 3000,
+                            didOpen: () => {
+                                Swal.getPopup().classList.add('animate__animated', 'animate__fadeIn');
+                            }
+                        });
+                    }
+                });
+            }
+        });
     });
-});
-
-
 
     // Fungsi untuk membuka modal
     function openPaymentModal(bookingId) {
-    const form = document.getElementById('paymentForm');
-    const action = form.getAttribute('action').replace(':id', bookingId);
-    form.setAttribute('action', action);
-    document.getElementById('booking_id').value = bookingId;
-    document.getElementById('paymentModal').classList.remove('hidden');
-}
-
+        const form = document.getElementById('paymentForm');
+        const action = form.getAttribute('action').replace(':id', bookingId);
+        form.setAttribute('action', action);
+        document.getElementById('booking_id').value = bookingId;
+        document.getElementById('paymentModal').classList.remove('hidden');
+    }
 
     // Fungsi untuk menutup modal
     function closePaymentModal() {
@@ -237,15 +236,11 @@
     function updateCountdown(bookingId, expiredAt, paymentStatus, bookingStatus) {
         const countdownElement = document.getElementById('countdown_' + bookingId);
         if (bookingStatus === 'canceled') {
-        countdownElement.textContent = "Dibatalkan";
-        return;
+            countdownElement.textContent = "Dibatalkan";
+            return;
         }
 
-        // Jika status adalah 'paid' atau 'checked', set countdown ke "-"
-        if (paymentStatus === 'paid') {
-            countdownElement.textContent = "-";
-            return;
-        } else if (paymentStatus === 'checked') {
+        if (paymentStatus === 'paid' || paymentStatus === 'checked') {
             countdownElement.textContent = "-";
             return;
         }
@@ -256,12 +251,9 @@
             const now = new Date().getTime();
             const distance = expiredAtTime - now;
 
-            // Jika waktu habis, tampilkan "Expired" dan hentikan interval
             if (distance <= 0) {
                 clearInterval(interval);
                 countdownElement.textContent = "Expired";
-                // Opsional: Panggil fungsi untuk mengubah status booking
-                changeBookingStatusToCanceled(bookingId);
             } else {
                 const hours = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
                 const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
@@ -280,7 +272,6 @@
             '{{ $booking->status }}'
         );
     @endforeach
-
 </script>
 
 @include('components.footer')

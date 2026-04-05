@@ -81,13 +81,20 @@
                                 </select>
                             </div>
 
+                            @php
+                                $setting = \App\Models\Setting::first();
+                            @endphp
+
                             <div id="bank_details_section" class="hidden bg-gray-50 p-5 rounded-xl border border-gray-200">
                                 <div class="flex items-center justify-between mb-4">
                                     <div>
-                                        <h3 class="font-bold text-gray-900">Transfer ke BNI</h3>
-                                        <p class="text-sm font-medium text-gray-600 mt-1">No. Rek: <span class="text-blue-600 font-bold text-lg select-all">123-456-789</span></p>
+                                        <h3 class="font-bold text-gray-900">Transfer ke {{ $setting->bank_name ?? 'Bank Belum Diatur' }}</h3>
+                                        <p class="text-sm font-medium text-gray-600 mt-1">No. Rek: <span class="text-blue-600 font-bold text-lg select-all">{{ $setting->bank_account ?? '-' }}</span></p>
+                                        <p class="text-sm font-medium text-gray-600 mt-1">Atas Nama: <span class="font-bold text-gray-800">{{ $setting->bank_owner ?? '-' }}</span></p>
                                     </div>
-                                    <img src="/assets/img/bank.png" alt="BNI" class="h-8">
+                                    <div class="bg-blue-100 p-3 rounded-full">
+                                        <i class="fas fa-university text-blue-600 text-xl"></i>
+                                    </div>
                                 </div>
 
                                 <div class="mt-4">

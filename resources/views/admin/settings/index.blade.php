@@ -84,6 +84,29 @@
 
                     </div>
 
+                    <div class="bg-gray-50/80 px-6 py-4 border-y border-gray-200 mt-6">
+                        <h2 class="text-lg font-bold text-gray-800 flex items-center">
+                            <i class="fas fa-university text-blue-600 mr-3"></i> Informasi Rekening Pembayaran
+                        </h2>
+                    </div>
+
+                    <div class="p-6 space-y-6">
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                            <div>
+                                <label for="bank_name" class="block text-sm font-semibold text-gray-700 mb-2">Nama Bank</label>
+                                <input type="text" id="bank_name" name="bank_name" value="{{ old('bank_name', $setting->bank_name) }}" placeholder="Contoh: BCA / BRI / Mandiri" class="block w-full rounded-xl border-gray-300 bg-gray-50 py-3 px-4 shadow-sm focus:border-blue-500 focus:ring-blue-500 focus:bg-white transition-colors sm:text-sm">
+                            </div>
+                            <div>
+                                <label for="bank_account" class="block text-sm font-semibold text-gray-700 mb-2">Nomor Rekening</label>
+                                <input type="number" id="bank_account" name="bank_account" value="{{ old('bank_account', $setting->bank_account) }}" placeholder="Contoh: 1234567890" class="block w-full rounded-xl border-gray-300 bg-gray-50 py-3 px-4 shadow-sm focus:border-blue-500 focus:ring-blue-500 focus:bg-white transition-colors sm:text-sm">
+                            </div>
+                            <div>
+                                <label for="bank_owner" class="block text-sm font-semibold text-gray-700 mb-2">Atas Nama</label>
+                                <input type="text" id="bank_owner" name="bank_owner" value="{{ old('bank_owner', $setting->bank_owner) }}" placeholder="Contoh: Surya Daffa" class="block w-full rounded-xl border-gray-300 bg-gray-50 py-3 px-4 shadow-sm focus:border-blue-500 focus:ring-blue-500 focus:bg-white transition-colors sm:text-sm">
+                            </div>
+                        </div>
+                    </div>
+
                     <div class="bg-gray-50 px-6 py-4 border-t border-gray-200 flex justify-end">
                         <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-xl shadow-md transform transition active:scale-95 flex items-center">
                             <i class="fas fa-save mr-2"></i> Simpan Pengaturan
