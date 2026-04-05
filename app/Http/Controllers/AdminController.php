@@ -58,4 +58,29 @@ class AdminController extends Controller
         // Download file-nya
         return $pdf->download('laporan-pendapatan-futsal-' . date('Y-m-d') . '.pdf');
     }
+
+    public function financialReport(\Illuminate\Http\Request $request)
+    {
+        // Mulai query untuk mengambil payment yang sudah lunas beserta relasi booking dan usernya
+        $query = \App\Models\Payment::with(['booking.user', 'booking.field'])->where('status', 'paid');
+
+        // Jika ada filter tanggal mulai
+        if ($request->filled('start_date')) {
+            $query->whereDate('created_at', '>=', $request->start_date);
+        }
+
+        // Jika ada filter tanggal akhir
+        if ($request->filled('end_date')) {
+            $query->whereDate('created_at', '<=', $request->end_date);
+        }
+
+        // Eksekusi query, urutkan dari yang terbaru
+        $payments = $query->orderBy('created_at', 'desc')->get();
+
+        // Hitung total pendapatan dan total transaksi dari data yang difilter
+        $totalIncome = $payments->sum('amount');
+        $totalTransactions = $payments->count();
+
+        return view('admin.reports.financial', compact('payments', 'totalIncome', 'totalTransactions'));
+    }
 }

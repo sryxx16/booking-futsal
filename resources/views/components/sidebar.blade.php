@@ -12,6 +12,11 @@
                 Dashboard
             </a>
 
+            <a href="{{ route('admin.reports.financial') }}" class="flex items-center text-white opacity-75 hover:opacity-100 py-4 pl-6 nav-item">
+    <i class="fas fa-chart-line mr-3"></i>
+    Laporan Keuangan
+</a>
+
             <a href="{{ route('admin.add-ons.index') }}" class="flex items-center text-white opacity-75 hover:opacity-100 py-4 pl-6 nav-item">
     <i class="fas fa-box-open mr-3"></i>
     Fasilitas Tambahan
@@ -52,11 +57,18 @@
                 Tabel Pembayaran
             </a>
 
+            <a href="{{ route('admin.promo-codes.index') }}" class="flex items-center text-white opacity-75 hover:opacity-100 py-4 pl-6 nav-item">
+    <i class="fas fa-ticket-alt mr-3"></i>
+    Kode Promo
+</a>
+
             <a href="{{ route('admin.settings.index') }}"
             class="flex items-center {{ request()->routeIs('admin.settings.index') ? 'active-nav-link' : 'opacity-75 hover:opacity-100' }} py-4 pl-6 nav-item">
             <i class="nav-icon fas fa-cogs mr-3"></i> <p>
                 Pengaturan Web</p>
             </a>
+
+
 
             <!-- Log Out -->
             <form method="POST" action="{{ route('logout') }}" class="absolute w-full bottom-0">

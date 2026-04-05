@@ -35,16 +35,18 @@ class BookingController extends Controller
 
     public function store(Request $request)
     {
-        // Validasi input ditambah validasi add_ons
+        // Validasi input
         $request->validate([
             'field_id' => 'required|exists:fields,id',
             'date' => 'required|date',
             'schedule_id' => 'required|exists:schedules,id',
             'booking_name' => 'required|string|max:255',
             'phone_number' => 'required|string|max:20',
-            'add_ons' => 'nullable|array', // Validasi Add-ons
-            'add_ons.*.id' => 'exists:add_ons,id',
-            'add_ons.*.quantity' => 'integer|min:1',
+            'add_ons' => 'nullable|array',
+            'add_ons.*.id' => 'nullable|exists:add_ons,id', // <--- TAMBAHIN nullable DI SINI
+            'add_ons.*.quantity' => 'nullable|integer|min:1', // <--- TAMBAHIN nullable DI SINI
+            'promo_code_id' => 'nullable|exists:promo_codes,id',
+            'discount_amount' => 'nullable|numeric|min:0',
         ]);
 
         $schedule = Schedule::find($request->schedule_id);
@@ -52,8 +54,9 @@ class BookingController extends Controller
             return redirect()->back()->with('error', 'Jadwal sudah dipesan.');
         }
 
-        $expiredAt = Carbon::now()->addMinutes(15); // Biar nggak kecepatan, saya ubah jadi 15 menit ya
+        $expiredAt = \Carbon\Carbon::now()->addMinutes(15);
 
+        // 1. Simpan data Booking beserta Diskon
         $booking = Booking::create([
             'user_id' => auth()->id(),
             'field_id' => $request->field_id,
@@ -62,33 +65,39 @@ class BookingController extends Controller
             'phone_number' => $request->phone_number,
             'status' => 'pending',
             'expired_at' => $expiredAt,
+            // Simpan promo
+            'promo_code_id' => $request->promo_code_id,
+            'discount_amount' => $request->discount_amount ?? 0,
         ]);
 
-        // --- TAMBAHAN BARU: Simpan Add-Ons ke Pivot dan Kurangi Stok ---
+        // 2. Simpan Add-Ons (Jika Ada)
         if ($request->has('add_ons')) {
             foreach ($request->add_ons as $addonData) {
                 if (isset($addonData['id']) && isset($addonData['quantity'])) {
-                    $addOn = AddOn::find($addonData['id']);
-                    // Pastikan stok mencukupi
+                    $addOn = \App\Models\AddOn::find($addonData['id']);
                     if ($addOn && $addOn->stock >= $addonData['quantity']) {
-                        // Simpan ke tabel add_on_booking
                         $booking->addOns()->attach($addOn->id, [
                             'quantity' => $addonData['quantity'],
                             'price' => $addOn->price,
                         ]);
-                        // Kurangi stok barang
                         $addOn->decrement('stock', $addonData['quantity']);
                     }
                 }
             }
         }
-        // ---------------------------------------------------------------
 
+        // 3. Tambah Jumlah Pemakaian Promo (Jika pakai promo)
+        if ($request->promo_code_id) {
+            \App\Models\PromoCode::where('id', $request->promo_code_id)->increment('used_count');
+        }
+
+        // 4. Update Jadwal jadi Tidak Tersedia
         $schedule->update([
             'date' => $request->date,
             'is_available' => 0
         ]);
 
+        // 5. Kirim WhatsApp via Fonnte
         $pesanWa = "Halo *{$request->booking_name}*! 👋\n\n";
         $pesanWa .= "Booking lapangan futsal kamu berhasil dibuat. Berikut detailnya:\n\n";
         $pesanWa .= "📅 Tanggal: " . \Carbon\Carbon::parse($request->date)->translatedFormat('d F Y') . "\n";
@@ -331,6 +340,54 @@ class BookingController extends Controller
         return response()->json(['success' => true]);
     }
 
+    public function getAvailableSchedulesByDate(Request $request)
+    {
+        try {
+            $request->validate(['date' => 'required|date']);
+
+            // 1. Mapping nama hari Bahasa Inggris ke Indonesia (Anti-Crash)
+            $daysMapping = [
+                'Sunday'    => 'Minggu',
+                'Monday'    => 'Senin',
+                'Tuesday'   => 'Selasa',
+                'Wednesday' => 'Rabu',
+                'Thursday'  => 'Kamis',
+                'Friday'    => 'Jumat',
+                'Saturday'  => 'Sabtu'
+            ];
+
+            // Dapatkan nama hari dalam bahasa Inggris dulu, lalu ubah ke Indonesia
+            $englishDay = \Carbon\Carbon::parse($request->date)->format('l');
+            $day = $daysMapping[$englishDay];
+
+            $fields = \App\Models\Field::all();
+            $result = [];
+
+            foreach ($fields as $field) {
+                // Cari jadwal yang statusnya TERSIDIA pada hari tersebut di lapangan ini
+                $schedules = \App\Models\Schedule::where('field_id', $field->id)
+                    ->where('day', $day)
+                    ->where('is_available', true)
+                    ->orderBy('start_time')
+                    ->get();
+
+                $result[] = [
+                    'field_id' => $field->id,
+                    'field_name' => $field->name,
+                    'price_per_hour' => $field->price_per_hour,
+                    'schedules' => $schedules
+                ];
+            }
+
+            // Kembalikan data dalam bentuk JSON
+            return response()->json($result);
+
+        } catch (\Exception $e) {
+            // Kalau masih error, tampilkan pesan error aslinya dalam format JSON
+            // Biar gampang kita baca di tab "Network" atau "Console"
+            return response()->json(['error' => 'Internal Server Error', 'message' => $e->getMessage()], 500);
+        }
+    }
 
 
 }

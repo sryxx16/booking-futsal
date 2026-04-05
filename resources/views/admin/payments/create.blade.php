@@ -39,9 +39,31 @@
                             <p class="text-gray-500 font-medium mb-1">Waktu</p>
                             <p class="font-bold text-gray-900">{{ \Carbon\Carbon::parse($booking->schedule->start_time)->format('H:i') }} - {{ \Carbon\Carbon::parse($booking->schedule->end_time)->format('H:i') }} WIB</p>
                         </div>
-                        <div class="pt-4 border-t border-gray-200 mt-4">
-                            <p class="text-gray-500 font-medium mb-1">Total Tagihan</p>
-                            <p class="font-black text-3xl text-blue-600">Rp {{ number_format($totalPrice, 0, ',', '.') }}</p>
+
+                        <div class="pt-4 border-t border-gray-200 mt-4 space-y-2">
+                            @if($booking->discount_amount > 0)
+                                <div class="flex justify-between items-center">
+                                    <p class="text-gray-500 font-medium">Subtotal (Normal)</p>
+                                    <p class="font-bold text-gray-600">Rp {{ number_format($totalPrice + $booking->discount_amount, 0, ',', '.') }}</p>
+                                </div>
+                                <div class="flex justify-between items-center">
+                                    <p class="text-gray-500 font-medium flex items-center">
+                                        Diskon Voucher
+                                        @if($booking->promoCode)
+                                            <span class="bg-red-100 text-red-700 px-2 py-0.5 rounded-md text-[10px] ml-2 font-bold uppercase border border-red-200">
+                                                <i class="fas fa-tag mr-1"></i>{{ $booking->promoCode->code }}
+                                            </span>
+                                        @endif
+                                    </p>
+                                    <p class="font-bold text-red-500">- Rp {{ number_format($booking->discount_amount, 0, ',', '.') }}</p>
+                                </div>
+                                <div class="border-t border-gray-200 my-2"></div>
+                            @endif
+
+                            <div>
+                                <p class="text-gray-500 font-medium mb-1">Total Tagihan Akhir</p>
+                                <p class="font-black text-3xl text-blue-600">Rp {{ number_format($totalPrice, 0, ',', '.') }}</p>
+                            </div>
                         </div>
                     </div>
                 </div>

@@ -10,14 +10,10 @@ class Booking extends Model
     use HasFactory;
 
     protected $fillable = [
-        'user_id',
-        'field_id',
-        'schedule_id',
-        'booking_name',
-        'phone_number',
-        'status',
-        'expired_at'
+        'user_id', 'field_id', 'schedule_id', 'booking_name', 'phone_number', 'status', 'expired_at', 'promo_code_id', 'discount_amount'
     ];
+
+
 
     public function addOns()
     {
@@ -44,5 +40,10 @@ class Booking extends Model
     public function payment()
     {
         return $this->hasOne(Payment::class);
+    }
+
+    public function promoCode()
+    {
+        return $this->belongsTo(PromoCode::class, 'promo_code_id');
     }
 }

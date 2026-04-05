@@ -35,14 +35,26 @@
 
                     <div class="p-6 space-y-6">
 
-                        <div class="grid grid-cols-2 gap-6 bg-gray-50 p-4 rounded-xl border border-gray-200">
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 bg-gray-50 p-4 rounded-xl border border-gray-200">
                             <div>
                                 <label class="block text-xs font-bold text-gray-400 uppercase tracking-widest mb-1">ID Pemesanan</label>
                                 <p class="text-gray-900 font-bold">#{{ $payment->booking_id }}</p>
                             </div>
+
                             <div>
-                                <label class="block text-xs font-bold text-gray-400 uppercase tracking-widest mb-1">Jumlah Tagihan</label>
-                                <p class="text-blue-600 font-black">Rp {{ number_format($payment->amount, 0, ',', '.') }}</p>
+                                <label class="block text-xs font-bold text-gray-400 uppercase tracking-widest mb-1">Status Promo</label>
+                                @if($payment->booking->discount_amount > 0)
+                                    <span class="inline-flex items-center bg-red-100 text-red-700 px-2 py-1 rounded-md text-xs font-bold uppercase border border-red-200">
+                                        <i class="fas fa-tag mr-1"></i> {{ $payment->booking->promoCode->code ?? 'VOUCHER' }}
+                                    </span>
+                                @else
+                                    <p class="text-gray-500 font-medium text-sm">Tidak Pakai</p>
+                                @endif
+                            </div>
+
+                            <div>
+                                <label class="block text-xs font-bold text-gray-400 uppercase tracking-widest mb-1">Total Tagihan (Nett)</label>
+                                <p class="text-blue-600 font-black text-lg">Rp {{ number_format($payment->amount, 0, ',', '.') }}</p>
                             </div>
                         </div>
 
