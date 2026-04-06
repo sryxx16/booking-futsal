@@ -15,7 +15,7 @@ class BookingController extends Controller
 {
     public function index()
     {
-        // Menampilkan semua booking milik user yang login
+        // Menampilkan semua booking (Untuk Admin)
         $bookings = Booking::all();
         return view('admin.bookings.index', compact('bookings'));
     }
@@ -25,93 +25,56 @@ class BookingController extends Controller
         $users = User::all();
         $fields = Field::all();
         $schedules = Schedule::where('is_available', true)->get();
-
-        // --- TAMBAHAN BARU: Ambil add-ons yang stoknya lebih dari 0 ---
         $addOns = AddOn::where('stock', '>', 0)->get();
 
-        // Kirim $addOns ke view
         return view('admin.bookings.create', compact('users','fields', 'schedules', 'addOns'));
     }
 
-    public function store(Request $request)
+   public function store(Request $request)
     {
-        // Validasi input
+        // 1. Validasi Inputan User (Ubah schedule_id jadi array schedules)
         $request->validate([
             'field_id' => 'required|exists:fields,id',
-            'date' => 'required|date',
-            'schedule_id' => 'required|exists:schedules,id',
+            'date' => 'required|date|after_or_equal:today',
+            'schedules' => 'required|array|min:1', // Wajib berupa array dan minimal pilih 1 jam
+            'schedules.*' => 'exists:schedules,id',
             'booking_name' => 'required|string|max:255',
             'phone_number' => 'required|string|max:20',
-            'add_ons' => 'nullable|array',
-            'add_ons.*.id' => 'nullable|exists:add_ons,id', // <--- TAMBAHIN nullable DI SINI
-            'add_ons.*.quantity' => 'nullable|integer|min:1', // <--- TAMBAHIN nullable DI SINI
-            'promo_code_id' => 'nullable|exists:promo_codes,id',
-            'discount_amount' => 'nullable|numeric|min:0',
+        ], [
+            'schedules.required' => 'Lu belum milih jam mainnya bang!',
+            'schedules.min' => 'Minimal pilih 1 jadwal jam tayang.',
+            'booking_name.required' => 'Nama tim atau pemesan wajib diisi.',
+            'phone_number.required' => 'Nomor WhatsApp wajib diisi buat dihubungin admin.'
         ]);
 
-        $schedule = Schedule::find($request->schedule_id);
-        if ($schedule->is_available == 0) {
-            return redirect()->back()->with('error', 'Jadwal sudah dipesan.');
+        // 2. Cek apakah ada jadwal dalam array yang udah dibooking orang di detik yang sama
+        // (Asumsi sistem Abang: jadwal laku = is_available false)
+        $clashingSchedules = Schedule::whereIn('id', $request->schedules)
+                                     ->where('is_available', false)
+                                     ->exists();
+
+        if ($clashingSchedules) {
+            return back()->withErrors(['Wah telat nih! Salah satu jadwal yang dipilih baru saja dibooking orang lain. Silakan pilih jadwal yang lain.']);
         }
 
-        $expiredAt = \Carbon\Carbon::now()->addMinutes(15);
+        // 3. Simpan ke Database (Pake looping karena bisa pilih banyak jam sekaligus)
+        foreach ($request->schedules as $schedule_id) {
+            Booking::create([
+                'user_id' => Auth::id(),
+                'field_id' => $request->field_id,
+                'schedule_id' => $schedule_id,
+                'booking_name' => $request->booking_name,
+                'phone_number' => $request->phone_number,
+                'status' => 'pending',
+                'expired_at' => now()->addHours(2), // Dikasih waktu 2 jam buat bayar
+            ]);
 
-        // 1. Simpan data Booking beserta Diskon
-        $booking = Booking::create([
-            'user_id' => auth()->id(),
-            'field_id' => $request->field_id,
-            'schedule_id' => $schedule->id,
-            'booking_name' => $request->booking_name,
-            'phone_number' => $request->phone_number,
-            'status' => 'pending',
-            'expired_at' => $expiredAt,
-            // Simpan promo
-            'promo_code_id' => $request->promo_code_id,
-            'discount_amount' => $request->discount_amount ?? 0,
-        ]);
-
-        // 2. Simpan Add-Ons (Jika Ada)
-        if ($request->has('add_ons')) {
-            foreach ($request->add_ons as $addonData) {
-                if (isset($addonData['id']) && isset($addonData['quantity'])) {
-                    $addOn = \App\Models\AddOn::find($addonData['id']);
-                    if ($addOn && $addOn->stock >= $addonData['quantity']) {
-                        $booking->addOns()->attach($addOn->id, [
-                            'quantity' => $addonData['quantity'],
-                            'price' => $addOn->price,
-                        ]);
-                        $addOn->decrement('stock', $addonData['quantity']);
-                    }
-                }
-            }
+            // Opsional: Langsung ubah status jadwal jadi tidak tersedia biar nggak dobel
+            Schedule::where('id', $schedule_id)->update(['is_available' => false]);
         }
 
-        // 3. Tambah Jumlah Pemakaian Promo (Jika pakai promo)
-        if ($request->promo_code_id) {
-            \App\Models\PromoCode::where('id', $request->promo_code_id)->increment('used_count');
-        }
-
-        // 4. Update Jadwal jadi Tidak Tersedia
-        $schedule->update([
-            'date' => $request->date,
-            'is_available' => 0
-        ]);
-
-        // 5. Kirim WhatsApp via Fonnte
-        $pesanWa = "Halo *{$request->booking_name}*! 👋\n\n";
-        $pesanWa .= "Booking lapangan futsal kamu berhasil dibuat. Berikut detailnya:\n\n";
-        $pesanWa .= "📅 Tanggal: " . \Carbon\Carbon::parse($request->date)->translatedFormat('d F Y') . "\n";
-        $pesanWa .= "⏰ Jam: {$schedule->start_time} - {$schedule->end_time}\n";
-        $pesanWa .= "⏳ Batas Waktu Bayar: " . \Carbon\Carbon::parse($expiredAt)->format('H:i') . " WIB\n\n";
-        $pesanWa .= "Mohon segera selesaikan pembayaran sebelum batas waktu habis ya. Terima kasih! ⚽";
-
-        \App\Services\FonnteService::sendMessage($request->phone_number, $pesanWa);
-
-        if (auth()->user()->role === 'admin') {
-            return redirect()->route('admin.bookings.index')->with('success', 'Booking berhasil dibuat!');
-        }
-
-        return redirect()->route('user.administration.index')->with('success', 'Booking berhasil dibuat!');
+        // 4. Lempar (Redirect) user ke halaman Riwayat Pesanan
+        return redirect()->route('user.administration.index')->with('success', 'Booking berhasil diamankan! Silakan segera lakukan pembayaran.');
     }
 
     public function edit(Booking $booking)
@@ -129,12 +92,10 @@ class BookingController extends Controller
 
     public function update(Request $request, Booking $booking)
     {
-        // Memastikan hanya admin atau pemilik booking yang bisa mengupdate
         if (Auth::id() !== $booking->user_id && Auth::user()->role !== 'admin') {
             return redirect()->route('admin.bookings.index')->with('error', 'Anda tidak memiliki izin untuk mengupdate booking ini.');
         }
 
-        // Validasi input
         $validated = $request->validate([
             'field_id' => 'required|exists:fields,id',
             'schedule_id' => 'required|exists:schedules,id',
@@ -143,7 +104,6 @@ class BookingController extends Controller
             'status' => 'required|in:pending,confirmed,completed,canceled',
         ]);
 
-        // Jika jadwal berubah, kembalikan jadwal lama menjadi tersedia
         if ($booking->schedule_id !== $validated['schedule_id']) {
             $oldSchedule = Schedule::find($booking->schedule_id);
             if ($oldSchedule) {
@@ -151,52 +111,43 @@ class BookingController extends Controller
             }
         }
 
-        // Update booking dengan data baru
         $booking->update($validated);
 
-        // Ambil jadwal baru
         $schedule = Schedule::find($validated['schedule_id']);
         if ($schedule) {
-            // Perbarui status ketersediaan jadwal berdasarkan status booking
             switch ($validated['status']) {
                 case 'pending':
                 case 'confirmed':
                     $booking->update([
                         'status' => 'confirmed',
-                        'expired_at' => null, // Hilangkan waktu expired
+                        'expired_at' => null,
                     ]);
-                    $schedule->update(['is_available' => false]); // Jadwal tetap tidak tersedia
+                    $schedule->update(['is_available' => false]);
                     break;
                 case 'completed':
                 case 'canceled':
-                    $schedule->update(['is_available' => true]); // Jadwal tersedia kembali
+                    $schedule->update(['is_available' => true]);
                     break;
             }
         }
 
-        // Redirect dengan pesan sukses
         return redirect()->route('admin.bookings.index')->with('success', 'Booking berhasil diperbarui');
     }
 
-
-
     public function destroy(Booking $booking)
     {
-        // Memastikan hanya admin atau pemilik booking yang bisa menghapus
         if (Auth::id() !== $booking->user_id && Auth::user()->role !== 'admin') {
             return redirect()->route('admin.bookings.index')->with('error', 'Anda tidak memiliki izin untuk menghapus booking ini.');
         }
 
-        // Mengembalikan status jadwal menjadi tersedia dan menghapus tanggalnya
         $schedule = Schedule::find($booking->schedule_id);
         if ($schedule) {
             $schedule->update([
                 'is_available' => true,
-                'date' => null, // Menghapus tanggal booking pada jadwal
+                'date' => null,
             ]);
         }
 
-        // Menghapus booking
         $booking->delete();
 
         return redirect()->route('admin.bookings.index')->with('success', 'Booking berhasil dihapus');
@@ -204,110 +155,93 @@ class BookingController extends Controller
 
     public function getSchedules(Request $request)
     {
-        // Validasi input
         $validated = $request->validate([
             'field_id' => 'required|exists:fields,id',
             'date' => 'required|date',
         ]);
 
-        // Konversi tanggal yang dipilih menjadi nama hari
-        $day = \Carbon\Carbon::parse($validated['date'])->locale('id')->isoFormat('dddd'); // "Senin", "Selasa", dst.
+        $day = \Carbon\Carbon::parse($validated['date'])->locale('id')->isoFormat('dddd');
 
-        // Ambil jadwal berdasarkan lapangan, hari, dan status tersedia
+        // Ambil SEMUA jadwal di hari itu (jangan pakai where is_available = true lagi)
         $schedules = Schedule::where('field_id', $validated['field_id'])
-                            ->where('day', ucfirst($day))  // Mencocokkan nama hari (case sensitive)
-                            ->where('is_available', true) // Pastikan hanya jadwal yang tersedia yang diambil
+                            ->where('day', ucfirst($day))
+                            ->orderBy('start_time')
                             ->get();
+
+        // Manipulasi data buat ngasih tau frontend mana yang udah laku
+        $schedules->map(function($schedule) {
+            // Kalau is_available di database false, berarti is_booked = true
+            $schedule->is_booked = !$schedule->is_available;
+            return $schedule;
+        });
 
         return response()->json($schedules);
     }
 
+    // FUNGSI INI YANG DIPAKAI BUAT NAMPILIN RIWAYAT PESANAN USER
     public function indexBookingsUser()
     {
-        // Ambil semua booking yang hanya dimiliki oleh user yang sedang login
-        $bookings = Booking::where('user_id', Auth::id())->get();
+        // Ambil semua booking beserta relasinya, urutkan dari yang terbaru
+        $bookings = Booking::with(['field', 'schedule', 'payment'])
+                           ->where('user_id', Auth::id())
+                           ->latest()
+                           ->get();
 
-        // Proses data booking
         foreach ($bookings as $booking) {
-            // Cek status pembayaran terlebih dahulu
             if ($booking->payment && $booking->payment->status == 'paid') {
-                // Jika sudah dibayar, tidak perlu countdown
                 $booking->expired_at_display = '-';
             } elseif ($booking->payment && $booking->payment->status == 'failed') {
-
-
-                // Update jadwal menjadi tersedia kembali
                 if ($booking->schedule) {
-                    $booking->schedule->is_available = true; // Set jadwal menjadi tersedia
-                    $booking->schedule->date = null;        // Set tanggal menjadi null
+                    $booking->schedule->is_available = true;
+                    $booking->schedule->date = null;
                     $booking->schedule->save();
                 }
-
-                // Ubah status booking menjadi 'canceled'
                 $booking->status = 'canceled';
                 $booking->save();
-
-                // Pembayaran gagal
                 $booking->expired_at_display = 'Pembayaran Gagal';
-
             } elseif ($booking->payment && $booking->payment->status == 'checked') {
-                // Pembayaran sedang diperiksa
                 $booking->expired_at_display = 'Mengecek Pembayaran';
             } else {
-                // Jika belum ada pembayaran, cek status booking
                 if ($booking->status === 'confirmed') {
                     $booking->expired_at_display = '-';
                 } elseif (Carbon::parse($booking->expired_at) < now() && $booking->status === 'pending') {
-                    // Jika sudah lewat waktu expired dan status pending, ubah jadi canceled
                     $booking->status = 'canceled';
                     $booking->save();
-
-                    // Update jadwal menjadi tersedia
                     if ($booking->schedule) {
-                        $booking->schedule->is_available = true; // Asumsi ada kolom 'is_available'
+                        $booking->schedule->is_available = true;
                         $booking->schedule->save();
                     }
-
                     $booking->expired_at_display = 'Expired';
                 } else {
-                    // Tampilkan countdown jika belum expired
                     $booking->expired_at_display = Carbon::parse($booking->expired_at)->diffForHumans();
                 }
             }
         }
 
-
-
-        // Kirim data booking ke view
+        // Tampilkan ke view
         return view('user.administration.index', compact('bookings'));
     }
 
     public function cancel($bookingId)
     {
-        // Mencari booking berdasarkan ID
         $booking = Booking::find($bookingId);
 
-        // Pastikan booking ditemukan dan user yang login adalah pemilik booking
         if (!$booking || $booking->user_id !== auth()->id()) {
             return redirect()->route('user.administration.index')->with('error', 'Booking tidak ditemukan atau Anda tidak memiliki izin untuk membatalkannya.');
         }
 
-        // Mengubah status booking menjadi 'canceled'
         $booking->update(['status' => 'canceled']);
 
         $schedule = Schedule::find($booking->schedule_id);
         if ($schedule) {
-            // Set jadwal menjadi tersedia kembali dan menghapus tanggalnya
             $schedule->update([
-                'is_available' => true, // Menandakan jadwal tersedia
-                'date' => null // Menghapus tanggal booking pada jadwal
+                'is_available' => true,
+                'date' => null
             ]);
         }
 
-        // Redirect ke halaman riwayat booking
         return redirect()->route('user.administration.index')->with('success', 'Booking berhasil dibatalkan.');
     }
-
 
     public function scheduleDetails($scheduleId)
     {
@@ -325,10 +259,7 @@ class BookingController extends Controller
     {
         $booking = Booking::find($bookingId);
         if ($booking && $booking->status == 'pending') {
-            // Update status booking menjadi 'canceled'
             $booking->update(['status' => 'canceled']);
-
-            // Update jadwal menjadi tersedia dan set tanggal menjadi null
             $schedule = $booking->schedule;
             if ($schedule) {
                 $schedule->update([
@@ -345,7 +276,6 @@ class BookingController extends Controller
         try {
             $request->validate(['date' => 'required|date']);
 
-            // 1. Mapping nama hari Bahasa Inggris ke Indonesia (Anti-Crash)
             $daysMapping = [
                 'Sunday'    => 'Minggu',
                 'Monday'    => 'Senin',
@@ -356,7 +286,6 @@ class BookingController extends Controller
                 'Saturday'  => 'Sabtu'
             ];
 
-            // Dapatkan nama hari dalam bahasa Inggris dulu, lalu ubah ke Indonesia
             $englishDay = \Carbon\Carbon::parse($request->date)->format('l');
             $day = $daysMapping[$englishDay];
 
@@ -364,7 +293,6 @@ class BookingController extends Controller
             $result = [];
 
             foreach ($fields as $field) {
-                // Cari jadwal yang statusnya TERSIDIA pada hari tersebut di lapangan ini
                 $schedules = \App\Models\Schedule::where('field_id', $field->id)
                     ->where('day', $day)
                     ->where('is_available', true)
@@ -379,15 +307,21 @@ class BookingController extends Controller
                 ];
             }
 
-            // Kembalikan data dalam bentuk JSON
             return response()->json($result);
 
         } catch (\Exception $e) {
-            // Kalau masih error, tampilkan pesan error aslinya dalam format JSON
-            // Biar gampang kita baca di tab "Network" atau "Console"
             return response()->json(['error' => 'Internal Server Error', 'message' => $e->getMessage()], 500);
         }
     }
 
+    public function userIndex()
+{
+    // Ambil data booking milik user yang sedang login beserta relasinya (lapangan & jadwal)
+    $bookings = \App\Models\Booking::with(['field', 'schedule'])
+                ->where('user_id', auth()->id())
+                ->orderBy('created_at', 'desc')
+                ->get();
 
+    return view('user.administration.index', compact('bookings'));
+}
 }

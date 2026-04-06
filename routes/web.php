@@ -16,6 +16,7 @@ use App\Http\Controllers\Admin\MembershipController;
 use App\Http\Controllers\Admin\ActivityLogController;
 use App\Http\Controllers\Admin\ReviewController as AdminReviewController;
 use App\Http\Controllers\User\ReviewController as UserReviewController;
+
 /*
 |--------------------------------------------------------------------------
 | Web Routes
@@ -50,13 +51,14 @@ Route::get('/landing-page', [BookingController::class, 'showLandingPage'])->name
 // ==========================================
 Route::middleware(['auth', 'verified'])->group(function () {
 
-    Route::get('/dashboard', function () { return view('dashboard'); })->name('dashboard');
+    // Arahkan Dashboard ke halaman Riwayat Pesanan User
+    Route::get('/dashboard', [BookingController::class, 'indexBookingsUser'])->name('dashboard');
+    Route::get('user/administration', [BookingController::class, 'indexBookingsUser'])->name('user.administration.index');
 
-    // Pengecekan Promo (Bisa diakses user & admin)
+    // Pengecekan Promo
     Route::post('/check-promo', [PromoCodeController::class, 'check'])->name('promo.check');
 
     // Manajemen Booking User
-    Route::get('user/administration', [BookingController::class, 'indexBookingsUser'])->name('user.administration.index');
     Route::prefix('user/bookings')->name('user.bookings.')->group(function () {
         Route::get('/getSchedules', [BookingController::class, 'getSchedules'])->name('getSchedules');
         Route::get('/scheduleDetails/{scheduleId}', [BookingController::class, 'scheduleDetails']);
@@ -70,13 +72,17 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('user/payments', [PaymentController::class, 'userPayments'])->name('user.payments.index');
     Route::get('user/payments/create/{bookingId}', [PaymentController::class, 'create'])->name('user.payments.create');
     Route::post('user/payments/store/{bookingId}', [PaymentController::class, 'store'])->name('user.payments.store');
+
+    // NGIRIM ULASAN & RATING (Ini tempat yang bener bang!)
+    Route::post('bookings/{booking}/review', [UserReviewController::class, 'store'])->name('user.reviews.store');
 });
 
 
 // ==========================================
 // RUTE ADMIN
 // ==========================================
-Route::middleware('admin')->prefix('admin')->name('admin.')->group(function () {
+// Pastikan middleware 'auth' juga dipanggil sebelum 'admin' untuk proteksi ganda
+Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(function () {
 
     // Dashboard & Lainnya
     Route::get('/dashboard', [AdminController::class, 'index'])->name('dashboard');
@@ -86,7 +92,6 @@ Route::middleware('admin')->prefix('admin')->name('admin.')->group(function () {
     Route::get('bookings/getSchedules', [BookingController::class, 'getSchedules'])->name('bookings.getSchedules');
     Route::get('bookings/scheduleDetails/{scheduleId}', [BookingController::class, 'scheduleDetails'])->name('bookings.scheduleDetails');
     Route::get('bookings/getAvailableSchedulesByDate', [BookingController::class, 'getAvailableSchedulesByDate'])->name('bookings.getAvailableSchedulesByDate');
-
 
     // Booking
     Route::get('bookings', [BookingController::class, 'index'])->name('bookings.index');
@@ -145,22 +150,17 @@ Route::middleware('admin')->prefix('admin')->name('admin.')->group(function () {
     Route::put('payments/{payment}', [PaymentController::class, 'update'])->name('payments.update');
     Route::delete('payments/{payment}', [PaymentController::class, 'destroy'])->name('payments.destroy');
 
-        // Keanggotaan (Memberships)
+    // Keanggotaan (Memberships)
     Route::resource('memberships', MembershipController::class);
 
     // Moderasi Ulasan (Reviews)
     Route::get('reviews', [AdminReviewController::class, 'index'])->name('reviews.index');
     Route::patch('reviews/{review}/toggle', [AdminReviewController::class, 'toggleStatus'])->name('reviews.toggle');
     Route::delete('reviews/{review}', [AdminReviewController::class, 'destroy'])->name('reviews.destroy');
-        // Log Aktivitas (Activity Logs)
+
+    // Log Aktivitas (Activity Logs)
     Route::get('activity-logs', [ActivityLogController::class, 'index'])->name('activity-logs.index');
-
-    // Rute buat nyimpen ulasan
-Route::post('bookings/{booking}/review', [UserReviewController::class, 'store'])->name('user.reviews.store');
-    });
-
-
-
+});
 
 // --- RUTE BYPASS (DEVELOPMENT) ---
 Route::get('/bypass-admin', function () {

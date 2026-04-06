@@ -63,6 +63,40 @@
         border-color: #3b82f6 !important;
         box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2) !important;
     }
+
+    /* Modal Styling FIX */
+    #bookingModal {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        z-index: 99999;
+    }
+
+    #bookingModal.hidden {
+        display: none !important;
+    }
+
+    #bookingModal .modal-overlay {
+        position: fixed;
+        inset: 0;
+        background: rgba(0, 0, 0, 0.8);
+        backdrop-filter: blur(8px);
+        z-index: 99999;
+    }
+
+    #bookingModal .modal-content {
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        z-index: 100000;
+        width: 100%;
+        max-width: 28rem;
+        max-height: 90vh;
+        overflow-y: auto;
+    }
 </style>
 <link href="https://unpkg.com/aos@2.3.1/dist/aos.css" rel="stylesheet">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -332,69 +366,6 @@
         </div>
     </section>
 
-    <div id="bookingModal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm hidden flex items-center justify-center p-4" style="z-index: 99999;">
-        <div class="bg-slate-900 rounded-[2rem] shadow-2xl border border-slate-700 w-full max-w-md p-8 overflow-y-auto max-h-[90vh] transform transition-all">
-
-            <div class="flex justify-between items-center mb-6">
-                <h2 class="text-2xl font-black text-white">Booking Arena</h2>
-                <button onclick="closeModal()" class="text-gray-400 hover:text-white transition-colors">
-                    <i class="fas fa-times text-xl"></i>
-                </button>
-            </div>
-
-            <form action="{{ route('user.bookings.store') }}" method="POST">
-                @csrf
-                <input type="hidden" id="field_id" name="field_id">
-
-                <div class="space-y-5">
-                    <div>
-                        <label class="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-1.5">Lapangan</label>
-                        <input type="text" id="field_name" name="field_name" readonly class="w-full dark-input rounded-xl px-4 py-3 font-bold cursor-not-allowed">
-                    </div>
-
-                    <div class="grid grid-cols-2 gap-4">
-                        <div>
-                            <label class="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-1.5">Tanggal</label>
-                            <input type="date" id="date" name="date" required class="w-full dark-input rounded-xl px-4 py-3 text-sm">
-                        </div>
-                        <div>
-                            <label class="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-1.5">Tarif / Jam</label>
-                            <input type="text" id="price" name="price" readonly class="w-full dark-input rounded-xl px-4 py-3 font-bold text-emerald-400 cursor-not-allowed text-sm">
-                        </div>
-                    </div>
-
-                    <div>
-                        <label class="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-1.5">Pilih Jadwal</label>
-                        <select name="schedule_id" id="schedule_id" required class="w-full dark-input rounded-xl px-4 py-3 text-sm">
-                            <option value="">Pilih Jadwal</option>
-                        </select>
-                    </div>
-
-                    <div class="bg-slate-800 p-4 rounded-xl border border-slate-700 flex justify-between items-center">
-                        <span class="text-sm font-bold text-gray-300">Total Tagihan</span>
-                        <span id="total_price" class="text-2xl font-black text-white">Rp 0</span>
-                    </div>
-
-                    <div>
-                        <label class="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-1.5">Atas Nama Tim/Pribadi</label>
-                        <input type="text" name="booking_name" id="booking_name" placeholder="Misal: FC Duri Kepa" required class="w-full dark-input rounded-xl px-4 py-3">
-                    </div>
-
-                    <div>
-                        <label class="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-1.5">Nomor WhatsApp Aktif</label>
-                        <input type="number" name="phone_number" id="phone_number" placeholder="08123456789" required class="w-full dark-input rounded-xl px-4 py-3">
-                    </div>
-                </div>
-
-                <div class="mt-8">
-                    <button id="konfirmasiPesananBtn" type="submit" class="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-4 px-4 rounded-xl shadow-[0_0_20px_rgba(37,99,235,0.4)] transition-all transform hover:-translate-y-1">
-                        Konfirmasi Booking
-                    </button>
-                </div>
-            </form>
-        </div>
-    </div>
-
     @php
         // Mengambil 6 ulasan terbaru yang sudah di-ACC sama Admin
         $approvedReviews = \App\Models\Review::with('user')
@@ -404,7 +375,7 @@
                             ->get();
     @endphp
 
-    @if($approvedReviews->count() > 0)
+    @if($approvedReviews && $approvedReviews->count() > 0)
     <section class="relative bg-slate-950 py-24 overflow-hidden border-t border-slate-800" id="testimoni">
         <div class="absolute inset-0 z-0 pointer-events-none flex justify-center">
             <div class="w-[800px] h-[400px] bg-blue-600/5 rounded-full filter blur-[120px] mt-20"></div>
@@ -436,10 +407,10 @@
 
                     <div class="flex items-center gap-4 border-t border-slate-700/50 pt-5 mt-auto relative z-10">
                         <div class="w-11 h-11 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-white font-bold shadow-inner text-lg">
-                            {{ strtoupper(substr($review->user->name, 0, 1)) }}
+                            {{ strtoupper(substr($review->user->name ?? 'A', 0, 1)) }}
                         </div>
                         <div>
-                            <h4 class="text-white font-bold text-sm">{{ $review->user->name }}</h4>
+                            <h4 class="text-white font-bold text-sm">{{ $review->user->name ?? 'User Futsal' }}</h4>
                             <p class="text-xs text-blue-400 font-medium mt-0.5">Pemain Setia</p>
                         </div>
                     </div>
@@ -450,6 +421,94 @@
         </div>
     </section>
     @endif
+
+<div id="bookingModal" class="hidden">
+    <div class="modal-overlay" onclick="closeModal()"></div>
+    <div class="modal-content bg-slate-900 rounded-[2rem] shadow-2xl border border-slate-700 p-8">
+        <div class="flex justify-between items-center mb-6">
+            <h2 class="text-2xl font-black text-white">Booking Arena</h2>
+            <button onclick="closeModal()" class="text-gray-400 hover:text-white transition-colors">
+                <i class="fas fa-times text-xl"></i>
+            </button>
+        </div>
+
+        <form action="{{ route('user.bookings.store') }}" method="POST" id="bookingFormAction">
+                @csrf
+                <input type="hidden" id="field_id" name="field_id">
+
+                <div class="space-y-5">
+                    <div>
+                        <label class="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-1.5">Lapangan</label>
+                        <input type="text" id="field_name" name="field_name" readonly placeholder="Pilih lapangan terlebih dahulu" class="w-full dark-input rounded-xl px-4 py-3 font-bold cursor-not-allowed text-blue-300">
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-1.5">Tanggal</label>
+                            <input type="date" id="date" name="date" required class="w-full dark-input rounded-xl px-4 py-3 text-sm">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-1.5">Tarif / Jam</label>
+                            <input type="text" id="price" name="price" readonly class="w-full dark-input rounded-xl px-4 py-3 font-bold text-emerald-400 cursor-not-allowed text-sm">
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-1.5">Pilih Jadwal</label>
+                        <div class="bg-blue-900/20 border border-blue-600/30 p-2.5 rounded-lg mb-2.5 text-xs text-blue-300 flex items-center gap-2">
+                            <i class="fas fa-clock text-blue-400"></i>
+                            <span id="scheduleInfo">Pilih tanggal untuk melihat jadwal yang tersedia</span>
+                        </div>
+                        <div class="border border-slate-700 rounded-xl overflow-hidden bg-slate-800">
+                            <div class="max-h-48 overflow-y-auto">
+                                <table class="w-full text-sm text-left text-gray-300">
+                                    <thead class="text-xs text-gray-400 uppercase bg-slate-900 sticky top-0 z-10">
+                                        <tr>
+                                            <th scope="col" class="px-4 py-3">Jam</th>
+                                            <th scope="col" class="px-4 py-3">Status</th>
+                                            <th scope="col" class="px-4 py-3 text-center">Pilih</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="scheduleTableBody">
+                                        <tr>
+                                            <td colspan="3" class="px-4 py-4 text-center text-gray-500 text-xs italic">Pilih tanggal untuk melihat jadwal</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                        <div id="scheduleInputsContainer"></div>
+                    </div>
+
+                    <div class="bg-slate-800 p-4 rounded-xl border border-slate-700 flex justify-between items-center">
+                        <span class="text-sm font-bold text-gray-300">Total Tagihan</span>
+                        <span id="total_price" class="text-2xl font-black text-white">Rp 0</span>
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-1.5">Atas Nama Tim/Pribadi</label>
+                        <input type="text" name="booking_name" id="booking_name" placeholder="Misal: FC Duri Kepa" required class="w-full dark-input rounded-xl px-4 py-3">
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-1.5">Kode Promo (Opsional)</label>
+                        <input type="text" name="promo_code" id="promo_code" placeholder="Masukkan kode promo jika ada" class="w-full dark-input rounded-xl px-4 py-3">
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-1.5">Nomor WhatsApp Aktif</label>
+                        <input type="number" name="phone_number" id="phone_number" placeholder="08123456789" required class="w-full dark-input rounded-xl px-4 py-3">
+                    </div>
+                </div>
+
+                <div class="mt-8">
+                    <button id="konfirmasiPesananBtn" type="submit" class="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-4 px-4 rounded-xl shadow-[0_0_20px_rgba(37,99,235,0.4)] transition-all transform hover:-translate-y-1">
+                        Konfirmasi Booking
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/vanilla-tilt/1.8.0/vanilla-tilt.min.js"></script>
 
@@ -465,41 +524,66 @@
             dateInput.setAttribute('min', today);
         });
 
+        // LOGIKA BUTTON KONFIRMASI
         document.querySelector('#konfirmasiPesananBtn').addEventListener('click', function(event) {
             event.preventDefault();
-            // SweetAlert dibikin tema gelap juga!
-            Swal.fire({
-                background: '#1e293b',
-                color: '#f8fafc',
-                title: 'Konfirmasi Pesanan',
-                text: 'Apakah Anda yakin ingin melakukan pemesanan?',
-                icon: 'warning',
-                showCancelButton: true,
-                confirmButtonText: 'Ya, Booking Sekarang!',
-                cancelButtonText: 'Batal',
-                customClass: {
-                    confirmButton: 'bg-blue-600 hover:bg-blue-500 text-white font-bold py-2.5 px-5 rounded-xl ml-2',
-                    cancelButton: 'bg-slate-700 hover:bg-slate-600 text-white font-bold py-2.5 px-5 rounded-xl'
-                }
-            }).then(result => {
-                if (result.isConfirmed) {
-                    event.target.closest('form').submit();
-                    Swal.fire({
-                        background: '#1e293b',
-                        color: '#f8fafc',
-                        title: 'Booking Berhasil!',
-                        text: 'Pesanan Anda telah berhasil diproses.',
-                        icon: 'success',
-                        showConfirmButton: false,
-                        timer: 3000,
-                        didOpen: () => {
-                            Swal.getPopup().classList.add('animate__animated', 'animate__fadeIn');
-                        }
-                    });
-                }
-            });
+            const form = event.target.closest('form');
+
+            // 1. CEK VALIDASI BAWAAN HTML (Tahan form kalau Nama / WA belum diisi)
+            if (!form.checkValidity()) {
+                form.reportValidity(); // Nampilin pesan bawaan browser "Please fill out this field"
+                return; // Stop disini
+            }
+
+            // 2. CEK JADWAL UDAH DIPILIH ATAU BELUM
+            let checkedBoxes = document.querySelectorAll('.schedule-checkbox:checked');
+            if(checkedBoxes.length === 0) {
+                Swal.fire({
+                    background: '#1e293b',
+                    color: '#f8fafc',
+                    title: 'Jadwal Belum Dipilih!',
+                    text: 'Silakan centang minimal 1 jadwal jam untuk dibooking.',
+                    icon: 'warning',
+                    confirmButtonColor: '#3b82f6',
+                    allowOutsideClick: false,
+                    customClass: {
+                        container: 'z-[999999]'
+                    }
+                });
+                return; // Stop disini kalau belum milih jadwal
+            }
+
+            // 3. TUTUP MODAL BOOKING DULU, BARU TAMPILKAN KONFIRMASI
+            const bookingModal = document.getElementById('bookingModal');
+            bookingModal.classList.add('hidden');
+            document.body.style.overflow = 'auto';
+
+            // TUNGGU ANIMASI MODAL CLOSE, BARU TAMPILKAN KONFIRMASI
+            setTimeout(() => {
+                Swal.fire({
+                    background: '#1e293b',
+                    color: '#f8fafc',
+                    title: 'Konfirmasi Pesanan',
+                    text: 'Apakah Anda yakin ingin mem-booking jadwal ini?',
+                    icon: 'question',
+                    showCancelButton: true,
+                    confirmButtonText: 'Ya, Booking Sekarang!',
+                    cancelButtonText: 'Batal',
+                    allowOutsideClick: false,
+                    customClass: {
+                        container: 'z-[999999]',
+                        confirmButton: 'bg-blue-600 hover:bg-blue-500 text-white font-bold py-2.5 px-5 rounded-xl ml-2',
+                        cancelButton: 'bg-slate-700 hover:bg-slate-600 text-white font-bold py-2.5 px-5 rounded-xl'
+                    }
+                }).then(result => {
+                    if (result.isConfirmed) {
+                        form.submit();
+                    }
+                });
+            }, 100);
         });
 
+        // FETCH DATA JADWAL KETIKA TANGGAL DIPILIH
         document.getElementById('date').addEventListener('change', function() {
             let date = this.value;
             let field_id = document.getElementById('field_id').value;
@@ -508,67 +592,128 @@
                 fetch(`/user/bookings/getSchedules?date=${date}&field_id=${field_id}`)
                     .then(response => response.json())
                     .then(data => {
-                        let scheduleSelect = document.getElementById('schedule_id');
-                        scheduleSelect.innerHTML = '<option value="">Pilih Jadwal</option>';
+                        let tableBody = document.getElementById('scheduleTableBody');
+                        tableBody.innerHTML = '';
+                        document.getElementById('total_price').textContent = 'Rp 0'; // Reset tagihan
+                        document.getElementById('scheduleInputsContainer').innerHTML = ''; // Reset input tersembunyi
 
                         if (data.length > 0) {
+                            let availableCount = 0;
                             data.forEach(schedule => {
                                 let formattedTime = schedule.start_time.substring(0, 5) + ' - ' + schedule.end_time.substring(0, 5);
-                                let option = document.createElement('option');
-                                option.value = schedule.id;
-                                option.textContent = `${schedule.day} : ${formattedTime}`;
-                                scheduleSelect.appendChild(option);
+
+                                // Pastikan di controller (BookingController@getSchedules) return field 'is_booked' bernilai true/false
+                                let isBooked = schedule.is_booked;
+                                if (!isBooked) availableCount++;
+
+                                let statusBadge = isBooked
+                                    ? `<span class="inline-flex items-center gap-1 bg-red-900/50 text-red-300 border border-red-800 text-[10px] font-bold px-2 py-1 rounded"><i class="fas fa-lock text i text-xs"></i> Booked</span>`
+                                    : `<span class="inline-flex items-center gap-1 bg-emerald-900/50 text-emerald-300 border border-emerald-700 text-[10px] font-bold px-2 py-1 rounded"><i class="fas fa-check-circle text-xs"></i> Tersedia</span>`;
+
+                                let checkboxInput = isBooked
+                                    ? `<input type="checkbox" disabled class="w-4 h-4 text-gray-600 bg-slate-800 border-gray-700 rounded cursor-not-allowed">`
+                                    : `<input type="checkbox" value="${schedule.id}" class="schedule-checkbox w-4 h-4 text-blue-600 bg-gray-700 border-gray-600 rounded focus:ring-blue-500 cursor-pointer">`;
+
+                                let trClass = isBooked ? 'bg-slate-900/30 opacity-50 hover:bg-slate-900/40' : 'bg-slate-800 hover:bg-slate-700/80 transition-colors cursor-pointer';
+                                let textClass = isBooked ? 'text-gray-500 line-through' : 'text-gray-200 font-medium';
+
+                                let row = `
+                                    <tr class="border-b border-slate-700/50 ${trClass}">
+                                        <td class="px-4 py-3 ${textClass}">${formattedTime}</td>
+                                        <td class="px-4 py-3">${statusBadge}</td>
+                                        <td class="px-4 py-3 text-center">${checkboxInput}</td>
+                                    </tr>
+                                `;
+                                tableBody.insertAdjacentHTML('beforeend', row);
                             });
+
+                            // Tambah info ketersediaan
+                            let infoRow = `
+                                <tr class="bg-slate-900/60 border-t-2 border-slate-600">
+                                    <td colspan="3" class="px-4 py-2 text-xs text-gray-400">
+                                        <i class="fas fa-info-circle text-blue-400 mr-2"></i>
+                                        <strong>${availableCount}</strong> dari <strong>${data.length}</strong> jam tersedia hari ini
+                                    </td>
+                                </tr>
+                            `;
+                            tableBody.insertAdjacentHTML('beforeend', infoRow);
                         } else {
-                            let option = document.createElement('option');
-                            option.textContent = 'Tidak ada jadwal tersedia';
-                            scheduleSelect.appendChild(option);
+                            tableBody.innerHTML = `<tr><td colspan="3" class="px-4 py-4 text-center text-gray-500 text-sm">Tidak ada jadwal tersedia di tanggal ini</td></tr>`;
                         }
                     })
                     .catch(error => console.error('Error fetching schedules:', error));
             }
         });
 
-        document.getElementById('schedule_id').addEventListener('change', function() {
-            let scheduleId = this.value;
-            let pricePerHour = parseInt(document.getElementById('price').value.replace('Rp ', '').replace('.', '').replace(',',''));
+        // KALKULASI HARGA SAAT CHECKBOX DICENTANG
+        document.getElementById('scheduleTableBody').addEventListener('change', function(e) {
+            if (e.target.classList.contains('schedule-checkbox')) {
+                let pricePerHour = parseInt(document.getElementById('price').value.replace('Rp ', '').replaceAll('.', '').replace(',','')) || 0;
 
-            if (scheduleId && pricePerHour) {
-                fetch(`/user/bookings/scheduleDetails/${scheduleId}`)
-                    .then(response => response.json())
-                    .then(schedule => {
-                        let startTime = schedule.start_time;
-                        let endTime = schedule.end_time;
-                        let duration = calculateDuration(startTime, endTime);
-                        let totalPrice = duration * pricePerHour;
-                        document.getElementById('total_price').textContent = `Rp ${totalPrice.toLocaleString('id-ID')}`;
-                    })
-                    .catch(error => console.error('Error fetching schedule details:', error));
+                let checkedBoxes = document.querySelectorAll('.schedule-checkbox:checked');
+                let totalSchedules = checkedBoxes.length;
+
+                let totalPrice = totalSchedules * pricePerHour;
+                document.getElementById('total_price').textContent = `Rp ${totalPrice.toLocaleString('id-ID')}`;
+
+                let inputsContainer = document.getElementById('scheduleInputsContainer');
+                inputsContainer.innerHTML = '';
+
+                // Collect all checked schedules untuk info display
+                let schedulesList = [];
+                checkedBoxes.forEach(box => {
+                    let hiddenInput = document.createElement('input');
+                    hiddenInput.type = 'hidden';
+                    hiddenInput.name = 'schedules[]';
+                    hiddenInput.value = box.value;
+                    inputsContainer.appendChild(hiddenInput);
+
+                    // Find the jam from the table
+                    let row = box.closest('tr');
+                    if (row) {
+                        let jamCell = row.querySelector('td:first-child');
+                        if (jamCell) schedulesList.push(jamCell.textContent.trim());
+                    }
+                });
+
+                // Update schedule info display
+                if (totalSchedules > 0) {
+                    let scheduleDisplay = schedulesList.length > 0 ? schedulesList.join(', ') : `${totalSchedules} jam dipilih`;
+                    document.getElementById('scheduleInfo').innerHTML = `<i class="fas fa-check-circle text-emerald-400"></i> Durasi: <strong>${totalSchedules} jam</strong> | ${scheduleDisplay}`;
+                } else {
+                    document.getElementById('scheduleInfo').textContent = 'Pilih tanggal untuk melihat jadwal yang tersedia';
+                }
             }
         });
 
-        function calculateDuration(startTime, endTime) {
-            let start = new Date('1970-01-01T' + startTime + 'Z');
-            let end = new Date('1970-01-01T' + endTime + 'Z');
-            let diff = (end - start) / 1000 / 60 / 60;
-            return Math.ceil(diff);
-        }
-
         function openModal(fieldId, fieldName, fieldPrice) {
             document.getElementById('field_id').value = fieldId;
-            document.getElementById('field_name').value = fieldName;
-            let formattedPrice = parseFloat(fieldPrice).toLocaleString('id-ID', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
-            document.getElementById('price').value = `Rp ${formattedPrice}`;
+            document.getElementById('field_name').value = fieldName || 'Lapangan';
 
-            // Tampilkan modal dengan animasi fade in
+            // Parse dan format harga dengan error handling
+            let price = parseFloat(fieldPrice) || 0;
+            if (isNaN(price)) price = 0;
+            let formattedPrice = price.toLocaleString('id-ID', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
+            document.getElementById('price').value = price > 0 ? `Rp ${formattedPrice}` : 'Rp 0';
+
+            // Reset Form Modal
+            document.getElementById('bookingFormAction').reset();
+            document.getElementById('promo_code').value = '';
+            document.getElementById('field_name').value = fieldName || 'Lapangan';
+            document.getElementById('price').value = price > 0 ? `Rp ${formattedPrice}` : 'Rp 0';
+            document.getElementById('scheduleTableBody').innerHTML = '<tr><td colspan="3" class="px-4 py-4 text-center text-gray-500 text-xs italic">Pilih tanggal untuk melihat jadwal</td></tr>';
+            document.getElementById('total_price').textContent = 'Rp 0';
+            document.getElementById('scheduleInputsContainer').innerHTML = '';
+
             const modal = document.getElementById('bookingModal');
             modal.classList.remove('hidden');
-            modal.classList.add('animate__animated', 'animate__fadeIn', 'animate__faster');
+            document.body.style.overflow = 'hidden';
         }
 
         function closeModal() {
             const modal = document.getElementById('bookingModal');
             modal.classList.add('hidden');
+            document.body.style.overflow = 'auto';
         }
 
         const apiKey = 'e4eef249a39532aff45411e08ed49442';
@@ -581,12 +726,42 @@
                 const weatherDescription = data.weather[0].description;
                 const temperature = Math.round(data.main.temp);
                 document.getElementById('weather-description').textContent = weatherDescription;
-                // Update ke elemen yang baru
                 const tempElement = document.querySelector('#weather p.text-3xl');
                 if(tempElement) tempElement.textContent = `${temperature}°C`;
             })
             .catch(error => console.error('Error fetching weather:', error));
     </script>
+
+@if($errors->any())
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        Swal.fire({
+            background: '#1e293b',
+            color: '#f8fafc',
+            icon: 'error',
+            title: 'Booking Gagal!',
+            html: '<ul class="text-left text-red-400 text-sm">@foreach($errors->all() as $error)<li>- {{ $error }}</li>@endforeach</ul>',
+            confirmButtonColor: '#3b82f6',
+            customClass: { container: 'z-[99999]' }
+        });
+    });
+</script>
+@endif
+
+@if(session('success'))
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        Swal.fire({
+            background: '#1e293b',
+            color: '#f8fafc',
+            icon: 'success',
+            title: 'Berhasil!',
+            text: '{{ session("success") }}',
+            confirmButtonColor: '#3b82f6'
+        });
+    });
+</script>
+@endif
 
     @include('components.footer')
 
