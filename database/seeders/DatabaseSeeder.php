@@ -27,5 +27,8 @@ class DatabaseSeeder extends Seeder
             'password' => bcrypt('password123'),
             'role' => 'user',
         ]);
+
+        // Run Review Seeder
+        $this->call(ReviewSeeder::class);
     }
 }

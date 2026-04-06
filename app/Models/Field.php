@@ -15,4 +15,23 @@ class Field extends Model
     {
         return $this->hasMany(Booking::class);
     }
+
+    public function reviews()
+    {
+        return $this->hasMany(Review::class);
+    }
+
+    public function getAverageRatingAttribute()
+    {
+        $approvedReviews = $this->reviews()->where('is_approved', true)->get();
+        if ($approvedReviews->isEmpty()) {
+            return 0;
+        }
+        return round($approvedReviews->avg('rating'), 1);
+    }
+
+    public function getReviewCountAttribute()
+    {
+        return $this->reviews()->where('is_approved', true)->count();
+    }
 }

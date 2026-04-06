@@ -6,7 +6,12 @@
 @include('components.navbar')
 
 <div class="flex flex-col p-6 bg-gray-50 min-h-screen pt-28">
-    <h1 class="text-3xl font-bold text-gray-800 mb-6 text-center">Riwayat Booking</h1>
+    <div class="flex items-center justify-between mb-6 max-w-7xl mx-auto w-full">
+        <h1 class="text-3xl font-bold text-gray-800">Riwayat Booking</h1>
+        <a href="{{ url('/#fields') }}" class="inline-flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white font-bold py-2.5 px-6 rounded-xl transition-colors shadow-md">
+            <i class="fas fa-arrow-left"></i> Kembali ke Landing Page
+        </a>
+    </div>
 
     @if($bookings->isEmpty())
         <div class="text-center text-gray-600 bg-white p-8 rounded-2xl shadow-sm max-w-md mx-auto">
@@ -94,8 +99,8 @@
                         </button>
                     @elseif($booking->payment && $booking->payment->status == 'paid')
                         <div class="flex gap-2">
-                            <button disabled class="w-1/2 bg-green-50 text-green-600 border border-green-200 font-bold py-2.5 px-4 rounded-xl cursor-not-allowed">
-                                Lunas
+                            <button disabled class="w-1/2 bg-green-50 text-green-600 border border-green-200 font-bold py-2.5 px-4 rounded-xl cursor-not-allowed text-sm">
+                                <i class="fas fa-check mr-1"></i>Lunas
                             </button>
 
                             @php
@@ -103,12 +108,12 @@
                             @endphp
 
                             @if($hasReviewed)
-                                <button disabled class="w-1/2 bg-gray-100 text-gray-500 font-bold py-2.5 px-4 rounded-xl cursor-not-allowed">
-                                    <i class="fas fa-check-double mr-1"></i> Diulas
+                                <button disabled class="w-1/2 bg-gray-100 text-gray-500 font-bold py-2.5 px-4 rounded-xl cursor-not-allowed text-sm">
+                                    <i class="fas fa-check-double mr-1"></i>Diulas
                                 </button>
                             @else
-                                <button onclick="openReviewModal({{ $booking->id }}, '{{ $booking->field->name }}')" class="w-1/2 bg-yellow-400 hover:bg-yellow-500 text-white font-bold py-2.5 px-4 rounded-xl shadow-md transition-colors flex items-center justify-center">
-                                    <i class="fas fa-star mr-1"></i> Beri Ulasan
+                                <button onclick="openReviewModal({{ $booking->id }}, '{{ $booking->field->name }}')" class="w-1/2 bg-yellow-400 hover:bg-yellow-500 text-white font-bold py-2.5 px-4 rounded-xl shadow-md transition-colors flex items-center justify-center text-sm">
+                                    <i class="fas fa-star mr-1"></i>Beri Ulasan
                                 </button>
                             @endif
                         </div>
@@ -162,35 +167,65 @@
     </div>
 </div>
 
-<div id="reviewModal" class="fixed inset-0 bg-gray-900 bg-opacity-75 flex justify-center items-center hidden z-[100]">
-    <div class="bg-white rounded-2xl p-6 w-11/12 max-w-md shadow-2xl transform transition-all relative overflow-hidden">
-        <div class="absolute top-0 left-0 w-full h-2 bg-yellow-400"></div>
+<div id="reviewModal" class="fixed inset-0 bg-gray-900 bg-opacity-75 flex justify-center items-center hidden z-[100] p-4">
+    <div class="bg-white rounded-2xl p-8 w-full max-w-md shadow-2xl transform transition-all relative overflow-hidden max-h-[90vh] overflow-y-auto">
+        <div class="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-yellow-400 to-yellow-500"></div>
         <div class="flex justify-between items-center mb-4 mt-2">
-            <h2 class="text-xl font-bold text-gray-800">Nilai Pengalamanmu</h2>
-            <button onclick="closeReviewModal()" class="text-gray-400 hover:text-red-500"><i class="fas fa-times text-xl"></i></button>
+            <h2 class="text-2xl font-bold text-gray-800">Nilai Pengalamanmu</h2>
+            <button onclick="closeReviewModal()" class="text-gray-400 hover:text-red-500 transition-colors"><i class="fas fa-times text-2xl"></i></button>
         </div>
 
-        <p class="text-sm text-gray-600 mb-6 text-center">Bagaimana kualitas <span id="review_field_name" class="font-bold text-blue-600"></span> menurut Anda?</p>
+        <p class="text-sm text-gray-600 mb-8 text-center">Bagaimana kualitas <span id="review_field_name" class="font-bold text-blue-600 text-lg"></span> menurut Anda?</p>
 
         <form action="" method="POST" id="reviewForm">
             @csrf
 
-            <div class="flex justify-center space-x-3 mb-6" id="star-container">
-                <i class="fas fa-star text-4xl text-gray-300 cursor-pointer star-btn transition-colors hover:scale-110" data-value="1"></i>
-                <i class="fas fa-star text-4xl text-gray-300 cursor-pointer star-btn transition-colors hover:scale-110" data-value="2"></i>
-                <i class="fas fa-star text-4xl text-gray-300 cursor-pointer star-btn transition-colors hover:scale-110" data-value="3"></i>
-                <i class="fas fa-star text-4xl text-gray-300 cursor-pointer star-btn transition-colors hover:scale-110" data-value="4"></i>
-                <i class="fas fa-star text-4xl text-gray-300 cursor-pointer star-btn transition-colors hover:scale-110" data-value="5"></i>
+            <!-- Rating Input - Simple dan Handal -->
+            <div class="mb-8 p-6 rounded-2xl bg-gradient-to-br from-yellow-50 to-amber-50 border-3 border-yellow-300 shadow-inner">
+                <p class="text-center text-sm font-semibold text-gray-700 mb-4">Pilih Rating (1-5) ⭐</p>
+                
+                <!-- Radio Buttons untuk Rating -->
+                <div class="flex justify-center gap-4 mb-4">
+                    <label class="flex flex-col items-center cursor-pointer group">
+                        <input type="radio" name="rating" value="1" class="hidden rating-radio" required>
+                        <span class="text-5xl transition-all group-hover:scale-110">⭐</span>
+                        <span class="text-xs text-gray-600 mt-1">Buruk</span>
+                    </label>
+                    <label class="flex flex-col items-center cursor-pointer group">
+                        <input type="radio" name="rating" value="2" class="hidden rating-radio" required>
+                        <span class="text-5xl transition-all group-hover:scale-110">⭐⭐</span>
+                        <span class="text-xs text-gray-600 mt-1">Cukup</span>
+                    </label>
+                    <label class="flex flex-col items-center cursor-pointer group">
+                        <input type="radio" name="rating" value="3" class="hidden rating-radio" required>
+                        <span class="text-5xl transition-all group-hover:scale-110">⭐⭐⭐</span>
+                        <span class="text-xs text-gray-600 mt-1">Baik</span>
+                    </label>
+                    <label class="flex flex-col items-center cursor-pointer group">
+                        <input type="radio" name="rating" value="4" class="hidden rating-radio" required>
+                        <span class="text-5xl transition-all group-hover:scale-110">⭐⭐⭐⭐</span>
+                        <span class="text-xs text-gray-600 mt-1">Sangat Baik</span>
+                    </label>
+                    <label class="flex flex-col items-center cursor-pointer group">
+                        <input type="radio" name="rating" value="5" class="hidden rating-radio" required>
+                        <span class="text-5xl transition-all group-hover:scale-110">⭐⭐⭐⭐⭐</span>
+                        <span class="text-xs text-gray-600 mt-1">Luar Biasa</span>
+                    </label>
+                </div>
+
+                <div class="text-center">
+                    <p class="text-2xl font-black text-yellow-600" id="rating_display">Pilih rating di atas</p>
+                </div>
             </div>
-            <input type="hidden" name="rating" id="rating_input" required>
-            <p id="rating_error" class="text-red-500 text-xs text-center hidden mb-4">Silakan pilih bintang terlebih dahulu!</p>
+
+            <p id="rating_error" class="text-red-500 text-sm text-center hidden mb-4 font-bold">⚠️ Silakan pilih rating terlebih dahulu!</p>
 
             <div class="mb-6">
                 <label class="block text-sm font-bold text-gray-700 mb-2">Tulis Ulasan</label>
-                <textarea name="comment" rows="4" class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-yellow-400 focus:border-yellow-400 resize-none" placeholder="Ceritakan pengalamanmu main di sini (kebersihan, kualitas rumput, dll)..." required></textarea>
+                <textarea name="comment" rows="4" class="w-full px-4 py-3 bg-gray-50 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-yellow-400 focus:border-yellow-400 resize-none font-medium" placeholder="Ceritakan pengalamanmu main di sini (kebersihan, kualitas rumput, dll)..." required></textarea>
             </div>
 
-            <button type="submit" id="submitReviewBtn" class="w-full bg-yellow-400 hover:bg-yellow-500 text-gray-900 font-bold py-3.5 px-4 rounded-xl shadow-md transition-colors flex justify-center items-center">
+            <button type="submit" id="submitReviewBtn" class="w-full bg-gradient-to-r from-yellow-400 to-yellow-500 hover:from-yellow-500 hover:to-yellow-600 text-gray-900 font-bold py-4 px-4 rounded-xl shadow-lg transition-all transform hover:scale-105 flex justify-center items-center text-lg">
                 <i class="fas fa-paper-plane mr-2"></i> Kirim Ulasan
             </button>
         </form>
@@ -198,6 +233,56 @@
 </div>
 
 <script>
+    // Simple rating handler
+    function setupRatingInput() {
+        const radios = document.querySelectorAll('.rating-radio');
+        const displayEl = document.getElementById('rating_display');
+        const labels = ['', 'Buruk ⭐', 'Cukup ⭐⭐', 'Baik ⭐⭐⭐', 'Sangat Baik ⭐⭐⭐⭐', 'Luar Biasa ⭐⭐⭐⭐⭐'];
+        
+        radios.forEach(radio => {
+            radio.addEventListener('change', function() {
+                if (this.checked) {
+                    displayEl.textContent = labels[this.value] || 'Pilih rating';
+                    displayEl.classList.add('text-yellow-600');
+                    document.getElementById('rating_error').classList.add('hidden');
+                }
+            });
+        });
+    }
+
+    function openReviewModal(bookingId, fieldName) {
+        document.getElementById('review_field_name').textContent = fieldName;
+        
+        // Setup form action
+        const reviewForm = document.getElementById('reviewForm');
+        reviewForm.action = `{{ url('user/bookings') }}/${bookingId}/review`;
+
+        // Reset form
+        reviewForm.reset();
+        document.getElementById('rating_display').textContent = 'Pilih rating di atas';
+        document.getElementById('rating_display').classList.remove('text-yellow-600');
+        document.getElementById('rating_error').classList.add('hidden');
+
+        // Setup rating input
+        setupRatingInput();
+
+        // Show modal
+        document.getElementById('reviewModal').classList.remove('hidden');
+    }
+
+    function closeReviewModal() {
+        document.getElementById('reviewModal').classList.add('hidden');
+    }
+
+    // Validate on submit
+    document.getElementById('reviewForm').addEventListener('submit', function(e) {
+        const selectedRating = document.querySelector('input[name="rating"]:checked');
+        if (!selectedRating) {
+            e.preventDefault();
+            document.getElementById('rating_error').classList.remove('hidden');
+        }
+    });
+
     /* SCRIPT MODAL PEMBAYARAN & COUNTDOWN (Biarkan utuh) */
     document.querySelectorAll('form').forEach(form => {
         form.addEventListener('submit', function (event) {
@@ -307,46 +392,41 @@
     @endforeach
 
     /* ========================================== */
-    /* SCRIPT UNTUK MODAL REVIEW & BINTANG RATINGS */
-    /* ========================================== */
-    const stars = document.querySelectorAll('.star-btn');
-    const ratingInput = document.getElementById('rating_input');
-    const ratingError = document.getElementById('rating_error');
-    const reviewForm = document.getElementById('reviewForm');
-
-    // Logic waktu bintang di klik
-    stars.forEach(star => {
-        star.addEventListener('click', function() {
-            const value = this.getAttribute('data-value');
-            ratingInput.value = value;
-            ratingError.classList.add('hidden'); // Sembunyikan error kalau udah milih
-
-            // Warnain bintang sesuai urutan
-            stars.forEach(s => {
-                if(s.getAttribute('data-value') <= value) {
-                    s.classList.remove('text-gray-300');
-                    s.classList.add('text-yellow-400');
-                } else {
-                    s.classList.remove('text-yellow-400');
-                    s.classList.add('text-gray-300');
+<script>
+    // Simple rating handler
+    function setupRatingInput() {
+        const radios = document.querySelectorAll('.rating-radio');
+        const displayEl = document.getElementById('rating_display');
+        const labels = ['', 'Buruk ⭐', 'Cukup ⭐⭐', 'Baik ⭐⭐⭐', 'Sangat Baik ⭐⭐⭐⭐', 'Luar Biasa ⭐⭐⭐⭐⭐'];
+        
+        radios.forEach(radio => {
+            radio.addEventListener('change', function() {
+                if (this.checked) {
+                    displayEl.textContent = labels[this.value] || 'Pilih rating';
+                    displayEl.classList.add('text-yellow-600');
+                    document.getElementById('rating_error').classList.add('hidden');
                 }
             });
         });
-    });
+    }
 
     function openReviewModal(bookingId, fieldName) {
         document.getElementById('review_field_name').textContent = fieldName;
-        // Bikin link Action ke Controller secara dinamis
+        
+        // Setup form action
+        const reviewForm = document.getElementById('reviewForm');
         reviewForm.action = `{{ url('user/bookings') }}/${bookingId}/review`;
 
-        // Reset bintang dan form setiap modal dibuka
-        ratingInput.value = '';
+        // Reset form
         reviewForm.reset();
-        stars.forEach(s => {
-            s.classList.remove('text-yellow-400');
-            s.classList.add('text-gray-300');
-        });
+        document.getElementById('rating_display').textContent = 'Pilih rating di atas';
+        document.getElementById('rating_display').classList.remove('text-yellow-600');
+        document.getElementById('rating_error').classList.add('hidden');
 
+        // Setup rating input
+        setupRatingInput();
+
+        // Show modal
         document.getElementById('reviewModal').classList.remove('hidden');
     }
 
@@ -354,11 +434,12 @@
         document.getElementById('reviewModal').classList.add('hidden');
     }
 
-    // Mencegah form dikirim kalau bintang belum dipilih
-    reviewForm.addEventListener('submit', function(e) {
-        if(!ratingInput.value) {
+    // Validate on submit
+    document.getElementById('reviewForm').addEventListener('submit', function(e) {
+        const selectedRating = document.querySelector('input[name="rating"]:checked');
+        if (!selectedRating) {
             e.preventDefault();
-            ratingError.classList.remove('hidden');
+            document.getElementById('rating_error').classList.remove('hidden');
         }
     });
 </script>

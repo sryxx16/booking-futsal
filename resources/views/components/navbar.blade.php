@@ -24,7 +24,17 @@
                     @if(auth()->user()->role === 'admin')
                         <a href="{{ route('admin.dashboard') }}" class="bg-slate-800 hover:bg-slate-700 text-white font-bold py-2.5 px-6 rounded-xl border border-slate-600 transition-all shadow-md">Dashboard Admin</a>
                     @else
-                        <a href="{{ route('dashboard') }}" class="bg-slate-800 hover:bg-slate-700 text-white font-bold py-2.5 px-6 rounded-xl border border-slate-600 transition-all shadow-md">Dashboard Saya</a>
+                        @if(Route::currentRouteName() === 'user.administration.index')
+                            <a href="{{ route('user.administration.index') }}" class="bg-slate-800 hover:bg-slate-700 text-white font-bold py-2.5 px-6 rounded-xl border border-slate-600 transition-all shadow-md">Administrasi</a>
+                        @else
+                            <a href="{{ route('user.administration.index') }}" class="bg-slate-800 hover:bg-slate-700 text-white font-bold py-2.5 px-6 rounded-xl border border-slate-600 transition-all shadow-md">Administrasi</a>
+                        @endif
+                        <form action="{{ route('logout') }}" method="POST" style="display: inline;">
+                            @csrf
+                            <button type="submit" class="bg-red-600 hover:bg-red-700 text-white font-bold py-2.5 px-6 rounded-xl border border-red-500 transition-all shadow-md">
+                                <i class="fas fa-sign-out-alt mr-2"></i> Logout
+                            </button>
+                        </form>
                     @endif
                 @else
                     <a href="{{ route('login') }}" class="text-gray-300 hover:text-white font-bold transition-colors">Log in</a>
@@ -52,7 +62,17 @@
                     @if(auth()->user()->role === 'admin')
                         <a href="{{ route('admin.dashboard') }}" class="block text-center w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-3 rounded-xl transition-colors">Dashboard Admin</a>
                     @else
-                        <a href="{{ route('dashboard') }}" class="block text-center w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-3 rounded-xl transition-colors">Dashboard Saya</a>
+                        @if(Route::currentRouteName() === 'user.administration.index')
+                            <a href="{{ route('user.administration.index') }}" class="block text-center w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-3 rounded-xl transition-colors mb-3">Administrasi</a>
+                        @else
+                            <a href="{{ route('user.administration.index') }}" class="block text-center w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-3 rounded-xl transition-colors mb-3">Administasi</a>
+                        @endif
+                        <form action="{{ route('logout') }}" method="POST">
+                            @csrf
+                            <button type="submit" class="block text-center w-full bg-red-600 hover:bg-red-700 text-white font-bold py-3 rounded-xl transition-colors border border-red-500">
+                                <i class="fas fa-sign-out-alt mr-2"></i> Logout
+                            </button>
+                        </form>
                     @endif
                 @else
                     <div class="flex flex-col gap-3">

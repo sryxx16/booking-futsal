@@ -373,7 +373,57 @@
                             ->latest()
                             ->take(6)
                             ->get();
+        
+        // Hitung overall rating dari semua ulasan yang approved
+        $allApprovedReviews = \App\Models\Review::where('is_approved', true)->get();
+        $overallRating = $allApprovedReviews->avg('rating');
+        $totalReviews = $allApprovedReviews->count();
     @endphp
+
+    @if($allApprovedReviews && $allApprovedReviews->count() > 0)
+    <section class="relative bg-slate-950 py-20 overflow-hidden border-t border-slate-800">
+        <div class="absolute inset-0 z-0 pointer-events-none flex justify-center">
+            <div class="w-[800px] h-[400px] bg-yellow-600/5 rounded-full filter blur-[120px]"></div>
+        </div>
+
+        <div class="container mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+            <div class="max-w-4xl mx-auto bg-gradient-to-br from-slate-800/60 to-slate-900/60 backdrop-blur-xl border-2 border-yellow-400/30 rounded-[2rem] p-8 sm:p-12 shadow-2xl text-center">
+                
+                <div data-aos="fade-up">
+                    <h3 class="text-sm font-bold text-yellow-400 uppercase tracking-widest mb-4">⭐ Kepuasan Pelanggan</h3>
+                    
+                    <div class="mb-8">
+                        <div class="flex justify-center gap-2 mb-6">
+                            @for($i = 1; $i <= 5; $i++)
+                                <i class="fas fa-star {{ $i <= floor($overallRating) ? 'text-yellow-400' : ($i - $overallRating < 1 ? 'text-yellow-400' : 'text-slate-600') }} text-5xl drop-shadow-[0_0_10px_rgba(250,204,21,0.4)]"></i>
+                            @endfor
+                        </div>
+                        
+                        <p class="text-5xl sm:text-6xl font-black text-white mb-2">{{ number_format($overallRating, 1) }}<span class="text-3xl text-gray-400">/5</span></p>
+                        <p class="text-lg sm:text-xl text-gray-300 font-semibold mb-2">Rating Keseluruhan Arena</p>
+                        <p class="text-base text-gray-400">Berdasarkan {{ $totalReviews }} ulasan dari pengguna yang telah melakukan booking</p>
+                    </div>
+
+                    <div class="grid grid-cols-3 gap-4 sm:gap-6 mt-10 pt-8 border-t border-slate-700/50">
+                        <div>
+                            <p class="text-3xl sm:text-4xl font-black text-blue-400 mb-2">{{ $totalReviews }}+</p>
+                            <p class="text-xs sm:text-sm text-gray-400 font-semibold uppercase">Ulasan</p>
+                        </div>
+                        <div>
+                            <p class="text-3xl sm:text-4xl font-black text-emerald-400 mb-2">{{ count($fields) }}</p>
+                            <p class="text-xs sm:text-sm text-gray-400 font-semibold uppercase">Lapangan</p>
+                        </div>
+                        <div>
+                            <p class="text-3xl sm:text-4xl font-black text-purple-400 mb-2">{{ \App\Models\Booking::where('status', '!=', 'canceled')->count() }}+</p>
+                            <p class="text-xs sm:text-sm text-gray-400 font-semibold uppercase">Booking</p>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </section>
+    @endif
 
     @if($approvedReviews && $approvedReviews->count() > 0)
     <section class="relative bg-slate-950 py-24 overflow-hidden border-t border-slate-800" id="testimoni">
