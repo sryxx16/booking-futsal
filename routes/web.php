@@ -14,6 +14,8 @@ use App\Http\Controllers\AddOnController;
 use App\Http\Controllers\PromoCodeController;
 use App\Http\Controllers\Admin\MembershipController;
 use App\Http\Controllers\Admin\ActivityLogController;
+use App\Http\Controllers\Admin\ReviewController as AdminReviewController;
+use App\Http\Controllers\User\ReviewController as UserReviewController;
 /*
 |--------------------------------------------------------------------------
 | Web Routes
@@ -143,9 +145,22 @@ Route::middleware('admin')->prefix('admin')->name('admin.')->group(function () {
     Route::put('payments/{payment}', [PaymentController::class, 'update'])->name('payments.update');
     Route::delete('payments/{payment}', [PaymentController::class, 'destroy'])->name('payments.destroy');
 
+        // Keanggotaan (Memberships)
     Route::resource('memberships', MembershipController::class);
 
-Route::get('activity-logs', [ActivityLogController::class, 'index'])->name('activity-logs.index');});
+    // Moderasi Ulasan (Reviews)
+    Route::get('reviews', [AdminReviewController::class, 'index'])->name('reviews.index');
+    Route::patch('reviews/{review}/toggle', [AdminReviewController::class, 'toggleStatus'])->name('reviews.toggle');
+    Route::delete('reviews/{review}', [AdminReviewController::class, 'destroy'])->name('reviews.destroy');
+        // Log Aktivitas (Activity Logs)
+    Route::get('activity-logs', [ActivityLogController::class, 'index'])->name('activity-logs.index');
+
+    // Rute buat nyimpen ulasan
+Route::post('bookings/{booking}/review', [UserReviewController::class, 'store'])->name('user.reviews.store');
+    });
+
+
+
 
 // --- RUTE BYPASS (DEVELOPMENT) ---
 Route::get('/bypass-admin', function () {
