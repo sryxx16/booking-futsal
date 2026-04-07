@@ -3,81 +3,52 @@
 namespace App\Console\Commands;
 
 use Illuminate\Console\Command;
-use App\Models\Membership;
 use App\Models\Schedule;
-use App\Models\Booking;
 use Carbon\Carbon;
 
 class GenerateRecurringSchedules extends Command
 {
-    // Nama command untuk dijalankan di terminal
     protected $signature = 'schedules:generate-recurring';
-
-    protected $description = 'Otomatis membuat jadwal dan booking untuk Member Aktif minggu depan';
+    protected $description = 'Otomatis menduplikat jadwal rutin ke hari berikutnya dengan aman';
 
     public function handle()
     {
-        // 1. Ambil semua member yang masih aktif dan masa kontraknya belum habis
-        $memberships = Membership::with('user')
-            ->where('is_active', true)
-            ->where('end_date', '>=', now()->toDateString())
-            ->get();
-
-        // Mapping nama hari bahasa Indonesia ke konstan Carbon
-        $daysMap = [
-            'Senin' => Carbon::MONDAY, 'Selasa' => Carbon::TUESDAY,
-            'Rabu' => Carbon::WEDNESDAY, 'Kamis' => Carbon::THURSDAY,
-            'Jumat' => Carbon::FRIDAY, 'Sabtu' => Carbon::SATURDAY,
-            'Minggu' => Carbon::SUNDAY,
-        ];
-
         $generatedCount = 0;
 
-        foreach ($memberships as $member) {
-            $targetDay = $daysMap[$member->day] ?? null;
-            if (!$targetDay) continue;
+        // 1. Ambil template waktu yang unik biar ngga dobel-dobel
+        // Kita cuma butuh field_id, start_time, dan end_time
+        $templates = Schedule::where('is_recurring', true)
+            ->select('field_id', 'start_time', 'end_time')
+            ->distinct()
+            ->get();
 
-            // 2. Cari tanggal untuk hari tersebut di minggu depan (7 hari ke depan)
-            $targetDate = now()->next($targetDay)->format('Y-m-d');
+        // 2. Kita loop dari HARI INI ($i = 0) sampai 7 hari ke depan
+        for ($i = 0; $i <= 7; $i++) {
+            $targetDate = now()->addDays($i)->format('Y-m-d');
+            $targetDayName = now()->addDays($i)->translatedFormat('l');
 
-            // 3. Pastikan tanggal target tersebut masih dalam masa kontrak member
-            if ($targetDate < $member->start_date || $targetDate > $member->end_date) {
-                continue;
-            }
+            foreach ($templates as $template) {
+                // Gunakan whereTime biar format '15:00' dan '15:00:00' dianggap sama!
+                $exists = Schedule::where('field_id', $template->field_id)
+                    ->where('date', $targetDate)
+                    ->whereTime('start_time', $template->start_time)
+                    ->exists();
 
-            // 4. Cek apakah di tanggal dan jam itu jadwalnya udah terbuat atau belum
-            $existingSchedule = Schedule::where('field_id', $member->field_id)
-                ->where('date', $targetDate)
-                ->where('start_time', $member->start_time)
-                ->first();
-
-            // 5. Kalau belum ada, kita blok lapangannya!
-            if (!$existingSchedule) {
-                // Buat Jadwal
-                $schedule = Schedule::create([
-                    'field_id' => $member->field_id,
-                    'day' => $member->day,         // <--- TAMBAHKAN BARIS INI BANG
-                    'date' => $targetDate,
-                    'start_time' => $member->start_time,
-                    'end_time' => $member->end_time,
-                    'is_recurring' => true,
-                ]);
-
-                // Buat Booking atas nama tim member (status pending, nanti admin/user tinggal bayar per sesi)
-                Booking::create([
-                    'user_id' => $member->user_id,
-                    'schedule_id' => $schedule->id,
-                    'field_id' => $member->field_id,    // <--- TAMBAHIN BARIS INI
-                    'booking_name' => $member->team_name . ' (Member)',
-                    'phone_number' => $member->user->phone_number ?? '-',
-                    'status' => 'pending',
-                ]);
-
-                $this->info("Berhasil memblokir jadwal untuk: {$member->team_name} di tanggal {$targetDate}");
-                $generatedCount++;
+                if (!$exists) {
+                    Schedule::create([
+                        'field_id' => $template->field_id,
+                        'day' => $targetDayName,
+                        'date' => $targetDate,
+                        'start_time' => $template->start_time,
+                        'end_time' => $template->end_time,
+                        'is_recurring' => true,
+                        'is_available' => true,
+                    ]);
+                    $generatedCount++;
+                }
             }
         }
 
-        $this->info("Selesai! {$generatedCount} jadwal member berhasil digenerate.");
+        $this->info("Selesai! {$generatedCount} slot jadwal baru berhasil dicetak dengan rapi tanpa duplikat.");
     }
 }

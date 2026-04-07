@@ -32,32 +32,54 @@ class BookingController extends Controller
 
    public function store(Request $request)
     {
-        // 1. Validasi Inputan User (Ubah schedule_id jadi array schedules)
         $request->validate([
             'field_id' => 'required|exists:fields,id',
             'date' => 'required|date|after_or_equal:today',
-            'schedules' => 'required|array|min:1', // Wajib berupa array dan minimal pilih 1 jam
+            'schedules' => 'required|array|min:1',
             'schedules.*' => 'exists:schedules,id',
             'booking_name' => 'required|string|max:255',
             'phone_number' => 'required|string|max:20',
-        ], [
-            'schedules.required' => 'Lu belum milih jam mainnya bang!',
-            'schedules.min' => 'Minimal pilih 1 jadwal jam tayang.',
-            'booking_name.required' => 'Nama tim atau pemesan wajib diisi.',
-            'phone_number.required' => 'Nomor WhatsApp wajib diisi buat dihubungin admin.'
+            'promo_code' => 'nullable|string' // Validasi promo
         ]);
 
-        // 2. Cek apakah ada jadwal dalam array yang udah dibooking orang di detik yang sama
-        // (Asumsi sistem Abang: jadwal laku = is_available false)
         $clashingSchedules = Schedule::whereIn('id', $request->schedules)
                                      ->where('is_available', false)
                                      ->exists();
 
         if ($clashingSchedules) {
-            return back()->withErrors(['Wah telat nih! Salah satu jadwal yang dipilih baru saja dibooking orang lain. Silakan pilih jadwal yang lain.']);
+            return back()->withErrors(['Wah telat nih! Salah satu jadwal yang dipilih baru saja dibooking orang lain.']);
         }
 
-        // 3. Simpan ke Database (Pake looping karena bisa pilih banyak jam sekaligus)
+        // --- PROSES HITUNG DISKON SEBELUM MASUK DATABASE ---
+        $promoId = null;
+        $discountPerBooking = 0;
+
+        if ($request->filled('promo_code')) {
+            $promo = \App\Models\PromoCode::where('code', strtoupper($request->promo_code))->first();
+
+            // Pastikan promo valid
+            if ($promo && $promo->is_active && !\Carbon\Carbon::parse($promo->valid_until)->isPast() && $promo->used_count < $promo->quota) {
+                $promoId = $promo->id;
+                $field = \App\Models\Field::find($request->field_id);
+
+                $subtotal = count($request->schedules) * $field->price_per_hour;
+                $totalDiscount = 0;
+
+                if ($promo->type == 'percentage') {
+                    $totalDiscount = $subtotal * ($promo->value / 100);
+                } else {
+                    $totalDiscount = $promo->value;
+                }
+
+                // Dibagi rata ke setiap invoice jam
+                $discountPerBooking = $totalDiscount / count($request->schedules);
+
+                $promo->increment('used_count');
+            }
+        }
+        // ----------------------------------------------------
+
+        // Simpan ke Database
         foreach ($request->schedules as $schedule_id) {
             Booking::create([
                 'user_id' => Auth::id(),
@@ -65,15 +87,15 @@ class BookingController extends Controller
                 'schedule_id' => $schedule_id,
                 'booking_name' => $request->booking_name,
                 'phone_number' => $request->phone_number,
+                'promo_code_id' => $promoId,              // Simpan ID Promo
+                'discount_amount' => $discountPerBooking, // Simpan potongan harganya!
                 'status' => 'pending',
-                'expired_at' => now()->addHours(2), // Dikasih waktu 2 jam buat bayar
+                'expired_at' => now()->addHours(2),
             ]);
 
-            // Opsional: Langsung ubah status jadwal jadi tidak tersedia biar nggak dobel
             Schedule::where('id', $schedule_id)->update(['is_available' => false]);
         }
 
-        // 4. Lempar (Redirect) user ke halaman Riwayat Pesanan
         return redirect()->route('user.administration.index')->with('success', 'Booking berhasil diamankan! Silakan segera lakukan pembayaran.');
     }
 
@@ -160,11 +182,9 @@ class BookingController extends Controller
             'date' => 'required|date',
         ]);
 
-        $day = \Carbon\Carbon::parse($validated['date'])->locale('id')->isoFormat('dddd');
-
-        // Ambil SEMUA jadwal di hari itu (jangan pakai where is_available = true lagi)
-        $schedules = Schedule::where('field_id', $validated['field_id'])
-                            ->where('day', ucfirst($day))
+        // Cari berdasarkan TANGGAL yang diklik user, bukan sekadar nama hari
+        $schedules = \App\Models\Schedule::where('field_id', $validated['field_id'])
+                            ->where('date', $validated['date'])
                             ->orderBy('start_time')
                             ->get();
 

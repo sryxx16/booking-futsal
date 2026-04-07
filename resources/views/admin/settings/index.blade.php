@@ -102,7 +102,7 @@
                             </div>
                             <div>
                                 <label for="bank_owner" class="block text-sm font-semibold text-gray-700 mb-2">Atas Nama</label>
-                                <input type="text" id="bank_owner" name="bank_owner" value="{{ old('bank_owner', $setting->bank_owner) }}" placeholder="Contoh: Surya Daffa" class="block w-full rounded-xl border-gray-300 bg-gray-50 py-3 px-4 shadow-sm focus:border-blue-500 focus:ring-blue-500 focus:bg-white transition-colors sm:text-sm">
+                                <input type="text" id="bank_owner" name="bank_owner" value="{{ old('bank_owner', $setting->bank_owner) }}" placeholder="Contoh: nama kamu" class="block w-full rounded-xl border-gray-300 bg-gray-50 py-3 px-4 shadow-sm focus:border-blue-500 focus:ring-blue-500 focus:bg-white transition-colors sm:text-sm">
                             </div>
                         </div>
                     </div>

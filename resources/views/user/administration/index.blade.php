@@ -3,7 +3,6 @@
 @section('title', 'Riwayat Booking | Futsal')
 
 @section('content')
-{{-- @include('components.navbar') --}}
 
 <div class="flex flex-col p-6 bg-gray-50 min-h-screen pt-100">
     <div class="flex items-center justify-between mb-6 max-w-7xl mx-auto w-full">
@@ -38,10 +37,26 @@
                     <p class="text-gray-600 flex justify-between"><span class="font-semibold text-gray-700">No Telepon</span> <span>{{ $booking->phone_number }}</span></p>
                     <p class="text-gray-600 flex justify-between"><span class="font-semibold text-gray-700">Harga / jam</span> <span>Rp{{ number_format($booking->field->price_per_hour, 0, ',', '.') }}</span></p>
 
-                    <div class="bg-gray-50 p-2 rounded-lg mt-2 mb-2">
+                    @if($booking->discount_amount > 0)
+                    <p class="text-emerald-500 flex justify-between font-bold"><span class="font-semibold">Diskon Promo</span> <span>- Rp{{ number_format($booking->discount_amount, 0, ',', '.') }}</span></p>
+                    @endif
+
+                    <div class="bg-gray-50 p-2 rounded-lg mt-2 mb-3 border {{ $booking->discount_amount > 0 ? 'border-emerald-200 bg-emerald-50' : 'border-gray-100' }}">
                         <p class="text-gray-800 flex justify-between items-center">
-                            <span class="font-bold">Total Harga</span>
-                            <span class="font-black text-blue-600 text-lg">Rp{{ number_format((\Carbon\Carbon::parse($booking->schedule->end_time)->diffInHours(\Carbon\Carbon::parse($booking->schedule->start_time))) * $booking->field->price_per_hour, 0, ',', '.') }}</span>
+                            <span class="font-bold">Total Tagihan</span>
+                            @php
+                                $originalPrice = (\Carbon\Carbon::parse($booking->schedule->end_time)->diffInHours(\Carbon\Carbon::parse($booking->schedule->start_time))) * $booking->field->price_per_hour;
+                                $finalPrice = $originalPrice - $booking->discount_amount;
+                            @endphp
+
+                            @if($booking->discount_amount > 0)
+                                <span class="font-black text-blue-600 text-lg text-right">
+                                    <span class="text-xs line-through text-red-400 mr-1 block sm:inline font-normal">Rp{{ number_format($originalPrice, 0, ',', '.') }}</span>
+                                    Rp{{ number_format($finalPrice, 0, ',', '.') }}
+                                </span>
+                            @else
+                                <span class="font-black text-blue-600 text-lg">Rp{{ number_format($originalPrice, 0, ',', '.') }}</span>
+                            @endif
                         </p>
                     </div>
 
@@ -104,7 +119,7 @@
                             </button>
 
                             @php
-                                $hasReviewed = $booking->reviews()->exists();
+                                $hasReviewed = \App\Models\Review::where('booking_id', $booking->id)->exists();
                             @endphp
 
                             @if($hasReviewed)
@@ -112,7 +127,7 @@
                                     <i class="fas fa-check-double mr-1"></i>Diulas
                                 </button>
                             @else
-                                <button type="button" data-booking-id="{{ $booking->id }}" data-field-name="{{ $booking->field->name }}" class="open-review-btn w-1/2 bg-yellow-400 hover:bg-yellow-500 text-white font-bold py-2.5 px-4 rounded-xl shadow-md transition-colors flex items-center justify-center text-sm">
+                                <button onclick="openReviewModal({{ $booking->id }}, '{{ $booking->field->name }}')" class="w-1/2 bg-yellow-400 hover:bg-yellow-500 text-white font-bold py-2.5 px-4 rounded-xl shadow-md transition-colors flex items-center justify-center text-sm">
                                     <i class="fas fa-star mr-1"></i>Beri Ulasan
                                 </button>
                             @endif
@@ -180,7 +195,6 @@
         <form action="" method="POST" id="reviewForm">
             @csrf
 
-            <!-- Rating Input - Simple dan Handal -->
             <div class="mb-8 p-6 rounded-2xl bg-gradient-to-br from-yellow-50 to-amber-50 border-3 border-yellow-300 shadow-inner">
                 <p class="text-center text-sm font-semibold text-gray-700 mb-4">Pilih Rating (1-5)</p>
 
@@ -241,13 +255,10 @@
                     displayEl.classList.add('text-yellow-600');
                     document.getElementById('rating_error').classList.add('hidden');
 
-                    // Mengatur nyala bintang
                     stars.forEach((star, i) => {
                         if (i <= index) {
-                            // Hilangkan efek abu-abu & transparan (Bintang Nyala)
                             star.classList.remove('grayscale', 'opacity-40');
                         } else {
-                            // Tambahkan efek abu-abu & transparan (Bintang Redup)
                             star.classList.add('grayscale', 'opacity-40');
                         }
                     });
@@ -259,11 +270,9 @@
     function openReviewModal(bookingId, fieldName) {
         document.getElementById('review_field_name').textContent = fieldName;
 
-        // Setup form action
         const reviewForm = document.getElementById('reviewForm');
         reviewForm.action = `{{ url('user/bookings') }}/${bookingId}/review`;
 
-        // Reset form & kembalikan semua bintang ke warna redup
         reviewForm.reset();
         document.getElementById('rating_display').textContent = 'Pilih rating di atas';
         document.getElementById('rating_display').classList.remove('text-yellow-600');
@@ -274,11 +283,9 @@
             star.classList.add('grayscale', 'opacity-40');
         });
 
-        // Show modal
         document.getElementById('reviewModal').classList.remove('hidden');
     }
 
-    // Event delegation untuk button Beri Ulasan
     document.addEventListener('click', function(e) {
         if (e.target.closest('.open-review-btn')) {
             const btn = e.target.closest('.open-review-btn');
@@ -292,7 +299,6 @@
         document.getElementById('reviewModal').classList.add('hidden');
     }
 
-    // Validate on submit
     document.getElementById('reviewForm').addEventListener('submit', function(e) {
         const selectedRating = document.querySelector('input[name="rating"]:checked');
         if (!selectedRating) {
@@ -301,7 +307,6 @@
         }
     });
 
-    /* SCRIPT MODAL PEMBAYARAN & COUNTDOWN (Biarkan utuh) */
     document.querySelectorAll('form').forEach(form => {
         form.addEventListener('submit', function (event) {
             if (form.querySelector('button').innerText.includes("Batalkan Booking")) {

@@ -564,9 +564,15 @@
                     </div>
 
                     <div>
-                        <label class="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-1.5">Kode Promo (Opsional)</label>
-                        <input type="text" name="promo_code" id="promo_code" placeholder="Masukkan kode promo jika ada" class="w-full dark-input rounded-xl px-4 py-3">
-                    </div>
+    <label class="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-1.5">Kode Promo (Opsional)</label>
+    <div class="flex gap-2">
+        <input type="text" name="promo_code" id="promo_code" placeholder="Masukkan kode promo" class="w-full dark-input rounded-xl px-4 py-3">
+        <button type="button" id="btn-cek-promo" class="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-bold py-3 px-5 rounded-xl transition-all shadow-[0_0_15px_rgba(37,99,235,0.3)] shrink-0">
+            Cek
+        </button>
+    </div>
+    <div id="promo-message" class="text-xs mt-2 hidden font-bold"></div>
+</div>
 
                     <div>
                         <label class="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-1.5">Nomor WhatsApp Aktif</label>
@@ -709,15 +715,15 @@
         });
 
         // KALKULASI HARGA
+        // KALKULASI HARGA SAAT CHECKBOX DICENTANG (UPDATE)
         document.getElementById('scheduleTableBody').addEventListener('change', function(e) {
             if (e.target.classList.contains('schedule-checkbox')) {
-                let pricePerHour = parseInt(document.getElementById('price').value.replace('Rp ', '').replaceAll('.', '').replace(',','')) || 0;
+
+                calculateTotal(); // PANGGIL FUNGSI INI DULU BIAR HARGA UPDATE OTOMATIS
+
+                // KODE BAWAAN ABANG (Mengumpulkan info jam - JANGAN DIHAPUS, CUKUP TIMPA YANG LAMA)
                 let checkedBoxes = document.querySelectorAll('.schedule-checkbox:checked');
                 let totalSchedules = checkedBoxes.length;
-
-                let totalPrice = totalSchedules * pricePerHour;
-                document.getElementById('total_price').textContent = `Rp ${totalPrice.toLocaleString('id-ID')}`;
-
                 let inputsContainer = document.getElementById('scheduleInputsContainer');
                 inputsContainer.innerHTML = '';
 
@@ -749,6 +755,10 @@
             document.getElementById('field_id').value = fieldId;
             document.getElementById('field_name').value = fieldName || 'Lapangan';
 
+            globalDiscount = 0;
+            globalDiscountType = 'fixed';
+            document.getElementById('promo-message').className = 'hidden';
+
             let price = parseFloat(fieldPrice) || 0;
             if (isNaN(price)) price = 0;
             let formattedPrice = price.toLocaleString('id-ID', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
@@ -766,6 +776,100 @@
             modal.classList.remove('hidden');
             document.body.style.overflow = 'hidden';
         }
+
+        let globalDiscount = 0;
+        let globalDiscountType = 'fixed'; // 'fixed' (potongan tunai) atau 'percent' (persen)
+
+        // Fungsi baru untuk hitung total biar bisa dipanggil dari promo & jadwal
+        function calculateTotal() {
+            let pricePerHour = parseInt(document.getElementById('price').value.replace('Rp ', '').replaceAll('.', '').replace(',','')) || 0;
+            let checkedBoxes = document.querySelectorAll('.schedule-checkbox:checked');
+            let totalSchedules = checkedBoxes.length;
+
+            let subtotal = totalSchedules * pricePerHour;
+            let finalTotal = subtotal;
+            let discountAmount = 0;
+
+            // Hitung potongan harga jika promo aktif
+            if (subtotal > 0 && globalDiscount > 0) {
+                if (globalDiscountType === 'percent' || globalDiscountType === 'percentage') {
+                    discountAmount = subtotal * (globalDiscount / 100);
+                } else {
+                    discountAmount = globalDiscount; // Potongan langsung (misal 50.000)
+                }
+            }
+
+            finalTotal = finalTotal - discountAmount;
+            if (finalTotal < 0) finalTotal = 0;
+
+            // Tampilkan ke layar (Bikin efek harga dicoret kalau dapet diskon)
+            let displayTotal = document.getElementById('total_price');
+            if (discountAmount > 0) {
+                displayTotal.innerHTML = `<span class="text-base line-through text-red-400 mr-2 opacity-70">Rp ${subtotal.toLocaleString('id-ID')}</span> <span class="text-emerald-400">Rp ${finalTotal.toLocaleString('id-ID')}</span>`;
+            } else {
+                displayTotal.innerHTML = `Rp ${finalTotal.toLocaleString('id-ID')}`;
+            }
+        }
+
+        // AJAX Untuk Tombol Cek Promo
+        document.getElementById('btn-cek-promo').addEventListener('click', function() {
+            const promoCode = document.getElementById('promo_code').value.trim();
+            const msgBox = document.getElementById('promo-message');
+            const btn = this;
+
+            if (!promoCode) {
+                msgBox.innerHTML = '⚠️ Masukkan kode promo terlebih dahulu!';
+                msgBox.className = 'text-xs mt-2 text-yellow-400 font-bold block animate-pulse';
+                return;
+            }
+
+            let originalBtnText = btn.innerHTML;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+            btn.disabled = true;
+
+            // Mengambil token bawaan form Laravel
+            let token = document.querySelector('input[name="_token"]').value;
+
+            // Tembak data ke route promo
+            fetch('{{ route("promo.check") }}', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': token,
+                    'Accept': 'application/json'
+                },
+                body: JSON.stringify({ code: promoCode, promo_code: promoCode }) // Kirim ganda biar aman
+            })
+           .then(response => response.json())
+            .then(data => {
+                btn.innerHTML = originalBtnText;
+                btn.disabled = false;
+
+                // Cek data.valid (Sesuai dengan balasan dari PromoCodeController)
+                if (data.valid) {
+                    // Ambil datanya dari bungkus 'promo', nama kolomnya 'value' dan 'type'
+                    globalDiscount = data.promo.value;
+                    globalDiscountType = data.promo.type;
+
+                    msgBox.innerHTML = `✅ ${data.message}`;
+                    msgBox.className = 'text-xs mt-2 text-emerald-400 font-bold block';
+
+                    calculateTotal(); // Langsung potong harga di layar!
+                } else {
+                    globalDiscount = 0;
+                    msgBox.innerHTML = `❌ ${data.message}`;
+                    msgBox.className = 'text-xs mt-2 text-red-400 font-bold block';
+
+                    calculateTotal(); // Balikin harga ke semula
+                }
+            })
+            .catch(error => {
+                btn.innerHTML = originalBtnText;
+                btn.disabled = false;
+                msgBox.innerHTML = '❌ Terjadi kesalahan jaringan. Coba lagi.';
+                msgBox.className = 'text-xs mt-2 text-red-400 font-bold block';
+            });
+        });
 
         function closeModal() {
             const modal = document.getElementById('bookingModal');
