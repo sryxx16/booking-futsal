@@ -3,9 +3,9 @@
 @section('title', 'Riwayat Booking | Futsal')
 
 @section('content')
-@include('components.navbar')
+{{-- @include('components.navbar') --}}
 
-<div class="flex flex-col p-6 bg-gray-50 min-h-screen pt-28">
+<div class="flex flex-col p-6 bg-gray-50 min-h-screen pt-100">
     <div class="flex items-center justify-between mb-6 max-w-7xl mx-auto w-full">
         <h1 class="text-3xl font-bold text-gray-800">Riwayat Booking</h1>
         <a href="{{ url('/#fields') }}" class="inline-flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white font-bold py-2.5 px-6 rounded-xl transition-colors shadow-md">

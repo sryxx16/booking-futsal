@@ -120,22 +120,6 @@
 
     <div class="relative bg-cover bg-center h-screen" style="background-image: url('/assets/img/lapanganfutsal.jpg');" id="beranda">
         <div class="absolute inset-0 bg-animated-overlay"></div>
-
-        <div id="weather" data-tilt data-tilt-glare="true" data-tilt-max-glare="0.3" data-aos="fade-down" data-aos-delay="100" class="absolute top-6 left-6 backdrop-blur-md bg-slate-900/40 border border-slate-600/50 text-white p-4 rounded-2xl shadow-2xl flex items-center space-x-4 z-10 transition-transform preserve-3d cursor-pointer hover:bg-slate-800/60">
-            @if(isset($weatherDescription) && isset($temperature))
-                <div class="flex items-center pop-out">
-                    <img src="https://openweathermap.org/img/wn/{{ $weatherIcon }}@2x.png" alt="Weather Icon" class="w-14 h-14 drop-shadow-lg filter brightness-110">
-                    <div>
-                        <p class="text-sm font-medium capitalize text-gray-300">{{ $weatherDescription }}</p>
-                        <p class="text-3xl font-extrabold tracking-tighter bg-clip-text text-transparent bg-gradient-to-r from-blue-200 to-white">{{ $temperature }}°C</p>
-                        <p class="text-[10px] uppercase tracking-widest text-blue-400 font-bold mt-1">Jakarta</p>
-                    </div>
-                </div>
-            @else
-                <p class="text-sm font-medium text-gray-300">Memuat cuaca...</p>
-            @endif
-        </div>
-
         <div class="relative z-10 flex items-center justify-center h-full">
             <div class="text-center text-white px-4 max-w-5xl mx-auto">
                 <span data-aos="fade-up" class="inline-block py-1.5 px-4 rounded-full bg-slate-800/50 border border-blue-500/30 text-blue-300 text-sm font-bold tracking-widest uppercase mb-6 backdrop-blur-sm shadow-lg">
@@ -217,13 +201,7 @@
                         <div data-tilt data-tilt-max="5" data-tilt-speed="400" data-tilt-glare="true" data-tilt-max-glare="0.2" class="relative preserve-3d bg-slate-800 p-2 sm:p-3 rounded-3xl shadow-2xl border border-slate-700 cursor-pointer">
                             <img src="https://images.unsplash.com/photo-1531973576160-7125cd663d86" alt="Tentang Futsal Kami" class="w-full h-[300px] sm:h-[400px] object-cover rounded-2xl pop-out filter contrast-[1.1] saturate-[1.1] brightness-90">
                             <div class="absolute -bottom-6 -left-2 sm:-left-6 bg-slate-800 border border-slate-600 p-3 sm:p-4 rounded-2xl shadow-xl flex items-center gap-3 pop-out animate-bounce" style="animation-duration: 3s;">
-                                <div class="w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-br from-emerald-500 to-emerald-400 rounded-full flex items-center justify-center text-white shadow-inner">
-                                    <i class="fas fa-trophy text-base sm:text-xl"></i>
-                                </div>
-                                <div class="pl-2 pr-1">
-                                    <p class="text-[10px] sm:text-xs text-gray-400 font-bold uppercase tracking-wider">Kualitas</p>
-                                    <p class="text-base sm:text-lg font-black text-white leading-none">Standar FIFA</p>
-                                </div>
+
                             </div>
                         </div>
                     </div>
@@ -369,13 +347,18 @@
                     </div>
                 </div>
 
-                <div class="lg:col-span-3 rounded-[2rem] overflow-hidden border border-slate-700 shadow-2xl bg-slate-800 min-h-[350px] lg:min-h-full relative" data-aos="fade-left" data-aos-delay="200">
-                    <iframe
-                        src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d6337.524782408819!2d106.85205203921608!3d-6.461520198089065!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x2e69c10062133c43%3A0xf61e84c8c0f3ff34!2sCombro%20Fishing!5e1!3m2!1sid!2sid!4v1775113860895!5m2!1sid!2sid" width="100%" height="100%" style="border:0; filter: invert(90%) hue-rotate(180deg) contrast(100%); opacity: 0.9;" allowfullscreen="" loading="lazy" referrerpolicy="no-referrer-when-downgrade"
-                        class="absolute inset-0 w-full h-full"
-                        allowfullscreen="" loading="lazy" referrerpolicy="no-referrer-when-downgrade">
-                    </iframe>
-                </div>
+              <div class="lg:col-span-3 rounded-[2rem] overflow-hidden border border-slate-700 shadow-2xl bg-slate-800 min-h-[350px] lg:min-h-full relative" data-aos="fade-left" data-aos-delay="200">
+    <iframe
+        src="{{ $setting->google_maps_link ?? '...' }}"
+        width="100%"
+        height="100%"
+        style="border:0; filter: invert(90%) hue-rotate(180deg) contrast(100%); opacity: 0.9;"
+        allowfullscreen=""
+        loading="lazy"
+        referrerpolicy="no-referrer-when-downgrade"
+        class="absolute inset-0 w-full h-full">
+    </iframe>
+</div
 
             </div>
         </div>
