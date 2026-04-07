@@ -66,7 +66,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::post('/store', [BookingController::class, 'store'])->name('store');
         Route::post('/cancel/{bookingId}', [BookingController::class, 'cancel'])->name('cancel');
         Route::post('/cancel/expired/{bookingId}', [BookingController::class, 'cancelExpiredBooking'])->name('cancelExpired');
-    });
+        Route::post('/{booking}/review', [UserReviewController::class, 'store'])->name('review.store');
+        });
 
     // Manajemen Pembayaran User
     Route::get('user/payments', [PaymentController::class, 'userPayments'])->name('user.payments.index');
@@ -74,7 +75,6 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('user/payments/store/{bookingId}', [PaymentController::class, 'store'])->name('user.payments.store');
 
     // NGIRIM ULASAN & RATING (Ini tempat yang bener bang!)
-    Route::post('bookings/{booking}/review', [UserReviewController::class, 'store'])->name('user.reviews.store');
 });
 
 

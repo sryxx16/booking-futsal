@@ -97,7 +97,22 @@
         max-height: 90vh;
         overflow-y: auto;
     }
+
+    /* Animasi scroll jalan dari kanan ke kiri (Review) */
+    @keyframes scrollReviews {
+        0% { transform: translateX(0); }
+        100% { transform: translateX(-50%); }
+    }
+    .animate-scroll-reviews {
+        display: flex;
+        width: max-content;
+        animation: scrollReviews 30s linear infinite;
+    }
+    .animate-scroll-reviews:hover {
+        animation-play-state: paused;
+    }
 </style>
+
 <link href="https://unpkg.com/aos@2.3.1/dist/aos.css" rel="stylesheet">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
@@ -373,7 +388,7 @@
                             ->latest()
                             ->take(6)
                             ->get();
-        
+
         // Hitung overall rating dari semua ulasan yang approved
         $allApprovedReviews = \App\Models\Review::where('is_approved', true)->get();
         $overallRating = $allApprovedReviews->avg('rating');
@@ -388,17 +403,17 @@
 
         <div class="container mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
             <div class="max-w-4xl mx-auto bg-gradient-to-br from-slate-800/60 to-slate-900/60 backdrop-blur-xl border-2 border-yellow-400/30 rounded-[2rem] p-8 sm:p-12 shadow-2xl text-center">
-                
+
                 <div data-aos="fade-up">
                     <h3 class="text-sm font-bold text-yellow-400 uppercase tracking-widest mb-4">⭐ Kepuasan Pelanggan</h3>
-                    
+
                     <div class="mb-8">
                         <div class="flex justify-center gap-2 mb-6">
                             @for($i = 1; $i <= 5; $i++)
                                 <i class="fas fa-star {{ $i <= floor($overallRating) ? 'text-yellow-400' : ($i - $overallRating < 1 ? 'text-yellow-400' : 'text-slate-600') }} text-5xl drop-shadow-[0_0_10px_rgba(250,204,21,0.4)]"></i>
                             @endfor
                         </div>
-                        
+
                         <p class="text-5xl sm:text-6xl font-black text-white mb-2">{{ number_format($overallRating, 1) }}<span class="text-3xl text-gray-400">/5</span></p>
                         <p class="text-lg sm:text-xl text-gray-300 font-semibold mb-2">Rating Keseluruhan Arena</p>
                         <p class="text-base text-gray-400">Berdasarkan {{ $totalReviews }} ulasan dari pengguna yang telah melakukan booking</p>
@@ -426,63 +441,88 @@
     @endif
 
     @if($approvedReviews && $approvedReviews->count() > 0)
-    <section class="relative bg-slate-950 py-24 overflow-hidden border-t border-slate-800" id="testimoni">
+    <section class="relative bg-slate-950 pt-16 pb-24 border-t border-slate-800" id="testimoni">
         <div class="absolute inset-0 z-0 pointer-events-none flex justify-center">
             <div class="w-[800px] h-[400px] bg-blue-600/5 rounded-full filter blur-[120px] mt-20"></div>
         </div>
 
-        <div class="container mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
-            <div class="text-center mb-16">
-                <h4 data-aos="fade-down" class="text-blue-500 font-bold tracking-widest uppercase mb-2">Testimoni</h4>
-                <h2 data-aos="fade-up" class="text-4xl md:text-5xl font-black text-white">Apa Kata Mereka?</h2>
-            </div>
+        <div class="text-center mb-12 relative z-10">
+            <h4 data-aos="fade-down" class="text-blue-500 font-bold tracking-widest uppercase mb-2">Testimoni</h4>
+            <h2 data-aos="fade-up" class="text-4xl md:text-5xl font-black text-white">Apa Kata Mereka?</h2>
+        </div>
 
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+        <div class="relative w-full overflow-hidden mt-8 z-10">
+            <div class="absolute inset-y-0 left-0 w-16 md:w-32 bg-gradient-to-r from-slate-950 to-transparent z-20 pointer-events-none"></div>
+            <div class="absolute inset-y-0 right-0 w-16 md:w-32 bg-gradient-to-l from-slate-950 to-transparent z-20 pointer-events-none"></div>
+
+            <div class="animate-scroll-reviews gap-6 px-6 pb-6">
+
                 @foreach($approvedReviews as $review)
-                <div data-aos="fade-up" data-aos-delay="{{ $loop->iteration * 100 }}" class="bg-slate-800/40 backdrop-blur-md p-8 rounded-3xl border border-slate-700/80 shadow-2xl relative group hover:border-blue-500/50 transition-colors transform hover:-translate-y-1 duration-300">
-
-                    <div class="absolute top-6 right-6 text-slate-700/30 group-hover:text-blue-500/10 transition-colors duration-300">
-                        <i class="fas fa-quote-right text-6xl"></i>
-                    </div>
-
-                    <div class="flex items-center space-x-1 mb-5">
-                        @for($i = 1; $i <= 5; $i++)
-                            <i class="fas fa-star {{ $i <= $review->rating ? 'text-yellow-400 drop-shadow-[0_0_5px_rgba(250,204,21,0.5)]' : 'text-slate-600' }} text-sm"></i>
-                        @endfor
-                    </div>
-
-                    <p class="text-gray-300 italic mb-8 relative z-10 line-clamp-4 leading-relaxed">
-                        "{{ $review->comment }}"
-                    </p>
-
-                    <div class="flex items-center gap-4 border-t border-slate-700/50 pt-5 mt-auto relative z-10">
-                        <div class="w-11 h-11 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-white font-bold shadow-inner text-lg">
-                            {{ strtoupper(substr($review->user->name ?? 'A', 0, 1)) }}
+                    <div class="w-80 md:w-96 flex-shrink-0 bg-slate-800/40 backdrop-blur-md p-8 rounded-3xl border border-slate-700/80 shadow-2xl relative group hover:border-blue-500/50 transition-colors">
+                        <div class="absolute top-6 right-6 text-slate-700/30 group-hover:text-blue-500/10 transition-colors duration-300">
+                            <i class="fas fa-quote-right text-6xl"></i>
                         </div>
-                        <div>
-                            <h4 class="text-white font-bold text-sm">{{ $review->user->name ?? 'User Futsal' }}</h4>
-                            <p class="text-xs text-blue-400 font-medium mt-0.5">Pemain Setia</p>
+                        <div class="flex items-center space-x-1 mb-5">
+                            @for($i = 1; $i <= 5; $i++)
+                                <i class="fas fa-star {{ $i <= $review->rating ? 'text-yellow-400 drop-shadow-[0_0_5px_rgba(250,204,21,0.5)]' : 'text-slate-600' }} text-sm"></i>
+                            @endfor
+                        </div>
+                        <p class="text-gray-300 italic mb-8 relative z-10 line-clamp-4 leading-relaxed whitespace-normal">
+                            "{{ $review->comment }}"
+                        </p>
+                        <div class="flex items-center gap-4 border-t border-slate-700/50 pt-5 mt-auto relative z-10">
+                            <div class="w-11 h-11 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-white font-bold shadow-inner text-lg flex-shrink-0">
+                                {{ strtoupper(substr($review->user->name ?? 'A', 0, 1)) }}
+                            </div>
+                            <div>
+                                <h4 class="text-white font-bold text-sm truncate w-40">{{ $review->user->name ?? 'User Futsal' }}</h4>
+                                <p class="text-xs text-blue-400 font-medium mt-0.5">Pemain Setia</p>
+                            </div>
                         </div>
                     </div>
-
-                </div>
                 @endforeach
+
+                @foreach($approvedReviews as $review)
+                    <div class="w-80 md:w-96 flex-shrink-0 bg-slate-800/40 backdrop-blur-md p-8 rounded-3xl border border-slate-700/80 shadow-2xl relative group hover:border-blue-500/50 transition-colors">
+                        <div class="absolute top-6 right-6 text-slate-700/30 group-hover:text-blue-500/10 transition-colors duration-300">
+                            <i class="fas fa-quote-right text-6xl"></i>
+                        </div>
+                        <div class="flex items-center space-x-1 mb-5">
+                            @for($i = 1; $i <= 5; $i++)
+                                <i class="fas fa-star {{ $i <= $review->rating ? 'text-yellow-400 drop-shadow-[0_0_5px_rgba(250,204,21,0.5)]' : 'text-slate-600' }} text-sm"></i>
+                            @endfor
+                        </div>
+                        <p class="text-gray-300 italic mb-8 relative z-10 line-clamp-4 leading-relaxed whitespace-normal">
+                            "{{ $review->comment }}"
+                        </p>
+                        <div class="flex items-center gap-4 border-t border-slate-700/50 pt-5 mt-auto relative z-10">
+                            <div class="w-11 h-11 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-white font-bold shadow-inner text-lg flex-shrink-0">
+                                {{ strtoupper(substr($review->user->name ?? 'A', 0, 1)) }}
+                            </div>
+                            <div>
+                                <h4 class="text-white font-bold text-sm truncate w-40">{{ $review->user->name ?? 'User Futsal' }}</h4>
+                                <p class="text-xs text-blue-400 font-medium mt-0.5">Pemain Setia</p>
+                            </div>
+                        </div>
+                    </div>
+                @endforeach
+
             </div>
         </div>
     </section>
     @endif
 
-<div id="bookingModal" class="hidden">
-    <div class="modal-overlay" onclick="closeModal()"></div>
-    <div class="modal-content bg-slate-900 rounded-[2rem] shadow-2xl border border-slate-700 p-8">
-        <div class="flex justify-between items-center mb-6">
-            <h2 class="text-2xl font-black text-white">Booking Arena</h2>
-            <button onclick="closeModal()" class="text-gray-400 hover:text-white transition-colors">
-                <i class="fas fa-times text-xl"></i>
-            </button>
-        </div>
+    <div id="bookingModal" class="hidden">
+        <div class="modal-overlay" onclick="closeModal()"></div>
+        <div class="modal-content bg-slate-900 rounded-[2rem] shadow-2xl border border-slate-700 p-8">
+            <div class="flex justify-between items-center mb-6">
+                <h2 class="text-2xl font-black text-white">Booking Arena</h2>
+                <button onclick="closeModal()" class="text-gray-400 hover:text-white transition-colors">
+                    <i class="fas fa-times text-xl"></i>
+                </button>
+            </div>
 
-        <form action="{{ route('user.bookings.store') }}" method="POST" id="bookingFormAction">
+            <form action="{{ route('user.bookings.store') }}" method="POST" id="bookingFormAction">
                 @csrf
                 <input type="hidden" id="field_id" name="field_id">
 
@@ -561,7 +601,6 @@
     </div>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/vanilla-tilt/1.8.0/vanilla-tilt.min.js"></script>
-
     <script src="https://unpkg.com/aos@2.3.1/dist/aos.js"></script>
     <script>
         AOS.init({ duration: 800, once: true, offset: 50 });
@@ -579,13 +618,11 @@
             event.preventDefault();
             const form = event.target.closest('form');
 
-            // 1. CEK VALIDASI BAWAAN HTML (Tahan form kalau Nama / WA belum diisi)
             if (!form.checkValidity()) {
-                form.reportValidity(); // Nampilin pesan bawaan browser "Please fill out this field"
-                return; // Stop disini
+                form.reportValidity();
+                return;
             }
 
-            // 2. CEK JADWAL UDAH DIPILIH ATAU BELUM
             let checkedBoxes = document.querySelectorAll('.schedule-checkbox:checked');
             if(checkedBoxes.length === 0) {
                 Swal.fire({
@@ -596,19 +633,15 @@
                     icon: 'warning',
                     confirmButtonColor: '#3b82f6',
                     allowOutsideClick: false,
-                    customClass: {
-                        container: 'z-[999999]'
-                    }
+                    customClass: { container: 'z-[999999]' }
                 });
-                return; // Stop disini kalau belum milih jadwal
+                return;
             }
 
-            // 3. TUTUP MODAL BOOKING DULU, BARU TAMPILKAN KONFIRMASI
             const bookingModal = document.getElementById('bookingModal');
             bookingModal.classList.add('hidden');
             document.body.style.overflow = 'auto';
 
-            // TUNGGU ANIMASI MODAL CLOSE, BARU TAMPILKAN KONFIRMASI
             setTimeout(() => {
                 Swal.fire({
                     background: '#1e293b',
@@ -633,7 +666,7 @@
             }, 100);
         });
 
-        // FETCH DATA JADWAL KETIKA TANGGAL DIPILIH
+        // FETCH DATA JADWAL
         document.getElementById('date').addEventListener('change', function() {
             let date = this.value;
             let field_id = document.getElementById('field_id').value;
@@ -644,20 +677,18 @@
                     .then(data => {
                         let tableBody = document.getElementById('scheduleTableBody');
                         tableBody.innerHTML = '';
-                        document.getElementById('total_price').textContent = 'Rp 0'; // Reset tagihan
-                        document.getElementById('scheduleInputsContainer').innerHTML = ''; // Reset input tersembunyi
+                        document.getElementById('total_price').textContent = 'Rp 0';
+                        document.getElementById('scheduleInputsContainer').innerHTML = '';
 
                         if (data.length > 0) {
                             let availableCount = 0;
                             data.forEach(schedule => {
                                 let formattedTime = schedule.start_time.substring(0, 5) + ' - ' + schedule.end_time.substring(0, 5);
-
-                                // Pastikan di controller (BookingController@getSchedules) return field 'is_booked' bernilai true/false
                                 let isBooked = schedule.is_booked;
                                 if (!isBooked) availableCount++;
 
                                 let statusBadge = isBooked
-                                    ? `<span class="inline-flex items-center gap-1 bg-red-900/50 text-red-300 border border-red-800 text-[10px] font-bold px-2 py-1 rounded"><i class="fas fa-lock text i text-xs"></i> Booked</span>`
+                                    ? `<span class="inline-flex items-center gap-1 bg-red-900/50 text-red-300 border border-red-800 text-[10px] font-bold px-2 py-1 rounded"><i class="fas fa-lock text-xs"></i> Booked</span>`
                                     : `<span class="inline-flex items-center gap-1 bg-emerald-900/50 text-emerald-300 border border-emerald-700 text-[10px] font-bold px-2 py-1 rounded"><i class="fas fa-check-circle text-xs"></i> Tersedia</span>`;
 
                                 let checkboxInput = isBooked
@@ -677,7 +708,6 @@
                                 tableBody.insertAdjacentHTML('beforeend', row);
                             });
 
-                            // Tambah info ketersediaan
                             let infoRow = `
                                 <tr class="bg-slate-900/60 border-t-2 border-slate-600">
                                     <td colspan="3" class="px-4 py-2 text-xs text-gray-400">
@@ -695,11 +725,10 @@
             }
         });
 
-        // KALKULASI HARGA SAAT CHECKBOX DICENTANG
+        // KALKULASI HARGA
         document.getElementById('scheduleTableBody').addEventListener('change', function(e) {
             if (e.target.classList.contains('schedule-checkbox')) {
                 let pricePerHour = parseInt(document.getElementById('price').value.replace('Rp ', '').replaceAll('.', '').replace(',','')) || 0;
-
                 let checkedBoxes = document.querySelectorAll('.schedule-checkbox:checked');
                 let totalSchedules = checkedBoxes.length;
 
@@ -709,7 +738,6 @@
                 let inputsContainer = document.getElementById('scheduleInputsContainer');
                 inputsContainer.innerHTML = '';
 
-                // Collect all checked schedules untuk info display
                 let schedulesList = [];
                 checkedBoxes.forEach(box => {
                     let hiddenInput = document.createElement('input');
@@ -718,7 +746,6 @@
                     hiddenInput.value = box.value;
                     inputsContainer.appendChild(hiddenInput);
 
-                    // Find the jam from the table
                     let row = box.closest('tr');
                     if (row) {
                         let jamCell = row.querySelector('td:first-child');
@@ -726,7 +753,6 @@
                     }
                 });
 
-                // Update schedule info display
                 if (totalSchedules > 0) {
                     let scheduleDisplay = schedulesList.length > 0 ? schedulesList.join(', ') : `${totalSchedules} jam dipilih`;
                     document.getElementById('scheduleInfo').innerHTML = `<i class="fas fa-check-circle text-emerald-400"></i> Durasi: <strong>${totalSchedules} jam</strong> | ${scheduleDisplay}`;
@@ -740,13 +766,11 @@
             document.getElementById('field_id').value = fieldId;
             document.getElementById('field_name').value = fieldName || 'Lapangan';
 
-            // Parse dan format harga dengan error handling
             let price = parseFloat(fieldPrice) || 0;
             if (isNaN(price)) price = 0;
             let formattedPrice = price.toLocaleString('id-ID', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
             document.getElementById('price').value = price > 0 ? `Rp ${formattedPrice}` : 'Rp 0';
 
-            // Reset Form Modal
             document.getElementById('bookingFormAction').reset();
             document.getElementById('promo_code').value = '';
             document.getElementById('field_name').value = fieldName || 'Lapangan';
@@ -812,6 +836,10 @@
     });
 </script>
 @endif
+
+<main class="flex-grow w-full">
+        @yield('content')
+    </main>
 
     @include('components.footer')
 

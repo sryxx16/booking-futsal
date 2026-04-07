@@ -1,104 +1,60 @@
-<nav class="fixed w-full z-50 transition-all duration-300 backdrop-blur-xl bg-slate-950/80 border-b border-slate-800 shadow-lg" id="navbar">
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div class="flex justify-between items-center h-20">
-            <div class="flex-shrink-0 flex items-center cursor-pointer transform hover:scale-105 transition-transform">
-<a href="{{ url('/') }}" class="flex items-center gap-2">                    <div class="w-10 h-10 bg-gradient-to-br from-blue-600 to-emerald-500 rounded-xl flex items-center justify-center shadow-[0_0_15px_rgba(59,130,246,0.5)]">
+<footer class="mt-auto w-full bg-slate-950 text-white pt-16 pb-8 border-t border-slate-800 flex-shrink-0 relative z-10">
+    <div class="max-w-7xl mx-auto px-6 lg:px-8">
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-12 mb-12">
+            <div>
+                <a href="{{ url('/') }}" class="flex items-center gap-2 mb-6">
+                    <div class="w-10 h-10 bg-gradient-to-br from-blue-600 to-emerald-500 rounded-xl flex items-center justify-center shadow-[0_0_15px_rgba(59,130,246,0.5)]">
                         <i class="fas fa-futbol text-white text-xl"></i>
                     </div>
                     <span class="font-black text-2xl tracking-tighter text-white">
                         My<span class="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-emerald-400">Futsal</span>
                     </span>
                 </a>
+                <p class="text-gray-400 leading-relaxed text-sm">
+                    Sistem Pemesanan Lapangan Futsal terbaik dan terpercaya. Main futsal jadi lebih mudah, cepat, dan praktis tanpa harus repot antri.
+                </p>
             </div>
 
-            <div class="hidden md:flex items-center space-x-8">
-                <a href="#beranda" class="text-sm font-bold text-gray-300 hover:text-blue-400 transition-colors uppercase tracking-wider">Beranda</a>
-                <a href="#aboutus" class="text-sm font-bold text-gray-300 hover:text-blue-400 transition-colors uppercase tracking-wider">Tentang</a>
-                <a href="#fields" class="text-sm font-bold text-gray-300 hover:text-blue-400 transition-colors uppercase tracking-wider">Arena</a>
-                <a href="#layanan" class="text-sm font-bold text-gray-300 hover:text-blue-400 transition-colors uppercase tracking-wider">Keunggulan</a>
-                <a href="#contactUs" class="text-sm font-bold text-gray-300 hover:text-blue-400 transition-colors uppercase tracking-wider">Kontak</a>
+            <div>
+                <h4 class="text-lg font-bold mb-4 text-white">Tautan Cepat</h4>
+                <ul class="space-y-3 text-sm">
+                    <li><a href="{{ url('/#beranda') }}" class="text-gray-400 hover:text-blue-400 hover:pl-2 transition-all duration-300">Beranda</a></li>
+                    <li><a href="{{ url('/#fields') }}" class="text-gray-400 hover:text-blue-400 hover:pl-2 transition-all duration-300">Daftar Lapangan</a></li>
+                    <li><a href="{{ url('/#testimoni') }}" class="text-gray-400 hover:text-blue-400 hover:pl-2 transition-all duration-300">Ulasan Pelanggan</a></li>
+                </ul>
             </div>
 
-            <div class="hidden md:flex items-center space-x-4">
-                @auth
-                    @if(auth()->user()->role === 'admin')
-                        <a href="{{ route('admin.dashboard') }}" class="bg-slate-800 hover:bg-slate-700 text-white font-bold py-2.5 px-6 rounded-xl border border-slate-600 transition-all shadow-md">Dashboard Admin</a>
-                    @else
-                        @if(Route::currentRouteName() === 'user.administration.index')
-                            <a href="{{ route('user.administration.index') }}" class="bg-slate-800 hover:bg-slate-700 text-white font-bold py-2.5 px-6 rounded-xl border border-slate-600 transition-all shadow-md">Administrasi</a>
-                        @else
-                            <a href="{{ route('user.administration.index') }}" class="bg-slate-800 hover:bg-slate-700 text-white font-bold py-2.5 px-6 rounded-xl border border-slate-600 transition-all shadow-md">Administrasi</a>
-                        @endif
-                        <form action="{{ route('logout') }}" method="POST" style="display: inline;">
-                            @csrf
-                            <button type="submit" class="bg-red-600 hover:bg-red-700 text-white font-bold py-2.5 px-6 rounded-xl border border-red-500 transition-all shadow-md">
-                                <i class="fas fa-sign-out-alt mr-2"></i> Logout
-                            </button>
-                        </form>
-                    @endif
-                @else
-                    <a href="{{ route('login') }}" class="text-gray-300 hover:text-white font-bold transition-colors">Log in</a>
-                    <a href="{{ route('register') }}" class="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-bold py-2.5 px-6 rounded-xl shadow-[0_0_15px_rgba(37,99,235,0.4)] transform hover:-translate-y-0.5 transition-all">Sign up</a>
-                @endauth
+            <div>
+                <h4 class="text-lg font-bold mb-4 text-white">Hubungi Kami</h4>
+                <ul class="space-y-4 text-gray-400 text-sm">
+                    @php
+                        $setting = \App\Models\Setting::first();
+                    @endphp
+                    <li class="flex items-start">
+                        <i class="fas fa-map-marker-alt mt-1 mr-3 text-emerald-400 text-base w-5"></i>
+                        <span class="leading-relaxed">{{ $setting->address ?? 'Jl. Raya Futsal No. 1, Cibinong, Bogor' }}</span>
+                    </li>
+                    <li class="flex items-center">
+                        <i class="fas fa-phone mr-3 text-emerald-400 text-base w-5"></i>
+                        <span>+{{ $setting->whatsapp_number ?? '6281234567890' }}</span>
+                    </li>
+                    <li class="flex items-center">
+                        <i class="fas fa-clock mr-3 text-emerald-400 text-base w-5"></i>
+                        <span>{{ $setting->open_hours ?? 'Setiap Hari' }}</span>
+                    </li>
+                </ul>
             </div>
+        </div>
 
-            <div class="md:hidden flex items-center">
-                <button id="mobile-menu-btn" class="text-gray-300 hover:text-white focus:outline-none p-2">
-                    <i class="fas fa-bars text-2xl"></i>
-                </button>
+        <div class="border-t border-slate-800 pt-8 flex flex-col md:flex-row justify-between items-center gap-4">
+            <p class="text-gray-500 text-sm text-center md:text-left">
+                &copy; {{ date('Y') }} MyFutsal. All rights reserved. Dibuat dengan <i class="fas fa-heart text-red-500 mx-1"></i>
+            </p>
+            <div class="flex space-x-4">
+                <a href="#" class="w-10 h-10 rounded-full bg-slate-800 flex items-center justify-center text-gray-400 hover:bg-gradient-to-br hover:from-purple-500 hover:to-pink-500 hover:text-white transition-all shadow-lg hover:-translate-y-1"><i class="fab fa-instagram"></i></a>
+                <a href="#" class="w-10 h-10 rounded-full bg-slate-800 flex items-center justify-center text-gray-400 hover:bg-blue-600 hover:text-white transition-all shadow-lg hover:-translate-y-1"><i class="fab fa-facebook-f"></i></a>
+                <a href="https://wa.me/{{ $setting->whatsapp_number ?? '' }}" target="_blank" class="w-10 h-10 rounded-full bg-slate-800 flex items-center justify-center text-gray-400 hover:bg-emerald-500 hover:text-white transition-all shadow-lg hover:-translate-y-1"><i class="fab fa-whatsapp text-lg"></i></a>
             </div>
         </div>
     </div>
-
-    <div id="mobile-menu" class="hidden md:hidden bg-slate-900 border-b border-slate-800 shadow-xl absolute w-full">
-        <div class="px-4 pt-2 pb-6 space-y-2">
-            <a href="#beranda" class="block px-3 py-3 rounded-xl text-base font-bold text-gray-300 hover:text-white hover:bg-slate-800 transition-colors">Beranda</a>
-            <a href="#aboutus" class="block px-3 py-3 rounded-xl text-base font-bold text-gray-300 hover:text-white hover:bg-slate-800 transition-colors">Tentang</a>
-            <a href="#fields" class="block px-3 py-3 rounded-xl text-base font-bold text-gray-300 hover:text-white hover:bg-slate-800 transition-colors">Arena</a>
-            <a href="#contactUs" class="block px-3 py-3 rounded-xl text-base font-bold text-gray-300 hover:text-white hover:bg-slate-800 transition-colors">Kontak</a>
-
-            <div class="border-t border-slate-700 my-4 pt-4">
-                @auth
-                    @if(auth()->user()->role === 'admin')
-                        <a href="{{ route('admin.dashboard') }}" class="block text-center w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-3 rounded-xl transition-colors">Dashboard Admin</a>
-                    @else
-                        @if(Route::currentRouteName() === 'user.administration.index')
-                            <a href="{{ route('user.administration.index') }}" class="block text-center w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-3 rounded-xl transition-colors mb-3">Administrasi</a>
-                        @else
-                            <a href="{{ route('user.administration.index') }}" class="block text-center w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-3 rounded-xl transition-colors mb-3">Administasi</a>
-                        @endif
-                        <form action="{{ route('logout') }}" method="POST">
-                            @csrf
-                            <button type="submit" class="block text-center w-full bg-red-600 hover:bg-red-700 text-white font-bold py-3 rounded-xl transition-colors border border-red-500">
-                                <i class="fas fa-sign-out-alt mr-2"></i> Logout
-                            </button>
-                        </form>
-                    @endif
-                @else
-                    <div class="flex flex-col gap-3">
-                        <a href="{{ route('login') }}" class="text-center w-full bg-slate-800 hover:bg-slate-700 text-white font-bold py-3 rounded-xl border border-slate-600 transition-colors">Log in</a>
-                        <a href="{{ route('register') }}" class="text-center w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-3 rounded-xl shadow-[0_0_15px_rgba(37,99,235,0.4)] transition-colors">Sign up</a>
-                    </div>
-                @endauth
-            </div>
-        </div>
-    </div>
-</nav>
-
-<script>
-    // Script buat toggle menu mobile
-    const btn = document.getElementById('mobile-menu-btn');
-    const menu = document.getElementById('mobile-menu');
-    const icon = btn.querySelector('i');
-
-    btn.addEventListener('click', () => {
-        menu.classList.toggle('hidden');
-        if(menu.classList.contains('hidden')) {
-            icon.classList.remove('fa-times');
-            icon.classList.add('fa-bars');
-        } else {
-            icon.classList.remove('fa-bars');
-            icon.classList.add('fa-times');
-        }
-    });
-</script>
+</footer>

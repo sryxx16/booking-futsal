@@ -24,10 +24,10 @@ class ReviewSeeder extends Seeder
                 'role' => 'user',
             ]
         );
-        
+
         // Ambil fields, atau skip jika belum ada
         $fields = Field::take(3)->get();
-        
+
         if ($fields->isEmpty()) {
             echo "❌ Fields tidak ditemukan. Pastikan fields sudah ada di database!\n";
             return;
@@ -80,7 +80,7 @@ class ReviewSeeder extends Seeder
         $fieldIndex = 0;
         foreach ($reviews as $review) {
             $field = $fields[$fieldIndex % $fields->count()];
-            
+
             Review::create([
                 'user_id' => $user->id,
                 'field_id' => $field->id,
@@ -90,7 +90,7 @@ class ReviewSeeder extends Seeder
                 'is_approved' => true, // Semua approve agar langsung tampil
                 'created_at' => now()->subDays(rand(1, 30)),
             ]);
-            
+
             $fieldIndex++;
         }
 

@@ -104,7 +104,7 @@
                             </button>
 
                             @php
-                                $hasReviewed = \App\Models\Review::where('booking_id', $booking->id)->exists();
+                                $hasReviewed = $booking->reviews()->exists();
                             @endphp
 
                             @if($hasReviewed)
@@ -112,7 +112,7 @@
                                     <i class="fas fa-check-double mr-1"></i>Diulas
                                 </button>
                             @else
-                                <button onclick="openReviewModal({{ $booking->id }}, '{{ $booking->field->name }}')" class="w-1/2 bg-yellow-400 hover:bg-yellow-500 text-white font-bold py-2.5 px-4 rounded-xl shadow-md transition-colors flex items-center justify-center text-sm">
+                                <button type="button" data-booking-id="{{ $booking->id }}" data-field-name="{{ $booking->field->name }}" class="open-review-btn w-1/2 bg-yellow-400 hover:bg-yellow-500 text-white font-bold py-2.5 px-4 rounded-xl shadow-md transition-colors flex items-center justify-center text-sm">
                                     <i class="fas fa-star mr-1"></i>Beri Ulasan
                                 </button>
                             @endif
@@ -182,39 +182,33 @@
 
             <!-- Rating Input - Simple dan Handal -->
             <div class="mb-8 p-6 rounded-2xl bg-gradient-to-br from-yellow-50 to-amber-50 border-3 border-yellow-300 shadow-inner">
-                <p class="text-center text-sm font-semibold text-gray-700 mb-4">Pilih Rating (1-5) ⭐</p>
-                
-                <!-- Radio Buttons untuk Rating -->
-                <div class="flex justify-center gap-4 mb-4">
-                    <label class="flex flex-col items-center cursor-pointer group">
+                <p class="text-center text-sm font-semibold text-gray-700 mb-4">Pilih Rating (1-5)</p>
+
+                <div class="flex justify-center gap-2 mb-4" id="star-container">
+                    <label class="cursor-pointer group flex flex-col items-center">
                         <input type="radio" name="rating" value="1" class="hidden rating-radio" required>
-                        <span class="text-5xl transition-all group-hover:scale-110">⭐</span>
-                        <span class="text-xs text-gray-600 mt-1">Buruk</span>
+                        <span class="text-4xl transition-all group-hover:scale-110 grayscale opacity-40 star-emoji inline-block">⭐</span>
                     </label>
-                    <label class="flex flex-col items-center cursor-pointer group">
+                    <label class="cursor-pointer group flex flex-col items-center">
                         <input type="radio" name="rating" value="2" class="hidden rating-radio" required>
-                        <span class="text-5xl transition-all group-hover:scale-110">⭐⭐</span>
-                        <span class="text-xs text-gray-600 mt-1">Cukup</span>
+                        <span class="text-4xl transition-all group-hover:scale-110 grayscale opacity-40 star-emoji inline-block">⭐</span>
                     </label>
-                    <label class="flex flex-col items-center cursor-pointer group">
+                    <label class="cursor-pointer group flex flex-col items-center">
                         <input type="radio" name="rating" value="3" class="hidden rating-radio" required>
-                        <span class="text-5xl transition-all group-hover:scale-110">⭐⭐⭐</span>
-                        <span class="text-xs text-gray-600 mt-1">Baik</span>
+                        <span class="text-4xl transition-all group-hover:scale-110 grayscale opacity-40 star-emoji inline-block">⭐</span>
                     </label>
-                    <label class="flex flex-col items-center cursor-pointer group">
+                    <label class="cursor-pointer group flex flex-col items-center">
                         <input type="radio" name="rating" value="4" class="hidden rating-radio" required>
-                        <span class="text-5xl transition-all group-hover:scale-110">⭐⭐⭐⭐</span>
-                        <span class="text-xs text-gray-600 mt-1">Sangat Baik</span>
+                        <span class="text-4xl transition-all group-hover:scale-110 grayscale opacity-40 star-emoji inline-block">⭐</span>
                     </label>
-                    <label class="flex flex-col items-center cursor-pointer group">
+                    <label class="cursor-pointer group flex flex-col items-center">
                         <input type="radio" name="rating" value="5" class="hidden rating-radio" required>
-                        <span class="text-5xl transition-all group-hover:scale-110">⭐⭐⭐⭐⭐</span>
-                        <span class="text-xs text-gray-600 mt-1">Luar Biasa</span>
+                        <span class="text-4xl transition-all group-hover:scale-110 grayscale opacity-40 star-emoji inline-block">⭐</span>
                     </label>
                 </div>
 
                 <div class="text-center">
-                    <p class="text-2xl font-black text-yellow-600" id="rating_display">Pilih rating di atas</p>
+                    <p class="text-2xl font-black text-gray-500" id="rating_display">Pilih rating di atas</p>
                 </div>
             </div>
 
@@ -233,42 +227,66 @@
 </div>
 
 <script>
-    // Simple rating handler
-    function setupRatingInput() {
+    document.addEventListener('DOMContentLoaded', function() {
         const radios = document.querySelectorAll('.rating-radio');
+        const stars = document.querySelectorAll('.star-emoji');
         const displayEl = document.getElementById('rating_display');
-        const labels = ['', 'Buruk ⭐', 'Cukup ⭐⭐', 'Baik ⭐⭐⭐', 'Sangat Baik ⭐⭐⭐⭐', 'Luar Biasa ⭐⭐⭐⭐⭐'];
-        
-        radios.forEach(radio => {
+        const labels = ['', 'Buruk', 'Cukup', 'Baik', 'Sangat Baik', 'Luar Biasa'];
+
+        radios.forEach((radio, index) => {
             radio.addEventListener('change', function() {
                 if (this.checked) {
-                    displayEl.textContent = labels[this.value] || 'Pilih rating';
+                    displayEl.textContent = labels[this.value];
+                    displayEl.classList.remove('text-gray-500');
                     displayEl.classList.add('text-yellow-600');
                     document.getElementById('rating_error').classList.add('hidden');
+
+                    // Mengatur nyala bintang
+                    stars.forEach((star, i) => {
+                        if (i <= index) {
+                            // Hilangkan efek abu-abu & transparan (Bintang Nyala)
+                            star.classList.remove('grayscale', 'opacity-40');
+                        } else {
+                            // Tambahkan efek abu-abu & transparan (Bintang Redup)
+                            star.classList.add('grayscale', 'opacity-40');
+                        }
+                    });
                 }
             });
         });
-    }
+    });
 
     function openReviewModal(bookingId, fieldName) {
         document.getElementById('review_field_name').textContent = fieldName;
-        
+
         // Setup form action
         const reviewForm = document.getElementById('reviewForm');
         reviewForm.action = `{{ url('user/bookings') }}/${bookingId}/review`;
 
-        // Reset form
+        // Reset form & kembalikan semua bintang ke warna redup
         reviewForm.reset();
         document.getElementById('rating_display').textContent = 'Pilih rating di atas';
         document.getElementById('rating_display').classList.remove('text-yellow-600');
+        document.getElementById('rating_display').classList.add('text-gray-500');
         document.getElementById('rating_error').classList.add('hidden');
 
-        // Setup rating input
-        setupRatingInput();
+        document.querySelectorAll('.star-emoji').forEach(star => {
+            star.classList.add('grayscale', 'opacity-40');
+        });
 
         // Show modal
         document.getElementById('reviewModal').classList.remove('hidden');
     }
+
+    // Event delegation untuk button Beri Ulasan
+    document.addEventListener('click', function(e) {
+        if (e.target.closest('.open-review-btn')) {
+            const btn = e.target.closest('.open-review-btn');
+            const bookingId = btn.getAttribute('data-booking-id');
+            const fieldName = btn.getAttribute('data-field-name');
+            openReviewModal(bookingId, fieldName);
+        }
+    });
 
     function closeReviewModal() {
         document.getElementById('reviewModal').classList.add('hidden');
@@ -390,58 +408,6 @@
             '{{ $booking->status }}'
         );
     @endforeach
-
-    /* ========================================== */
-<script>
-    // Simple rating handler
-    function setupRatingInput() {
-        const radios = document.querySelectorAll('.rating-radio');
-        const displayEl = document.getElementById('rating_display');
-        const labels = ['', 'Buruk ⭐', 'Cukup ⭐⭐', 'Baik ⭐⭐⭐', 'Sangat Baik ⭐⭐⭐⭐', 'Luar Biasa ⭐⭐⭐⭐⭐'];
-        
-        radios.forEach(radio => {
-            radio.addEventListener('change', function() {
-                if (this.checked) {
-                    displayEl.textContent = labels[this.value] || 'Pilih rating';
-                    displayEl.classList.add('text-yellow-600');
-                    document.getElementById('rating_error').classList.add('hidden');
-                }
-            });
-        });
-    }
-
-    function openReviewModal(bookingId, fieldName) {
-        document.getElementById('review_field_name').textContent = fieldName;
-        
-        // Setup form action
-        const reviewForm = document.getElementById('reviewForm');
-        reviewForm.action = `{{ url('user/bookings') }}/${bookingId}/review`;
-
-        // Reset form
-        reviewForm.reset();
-        document.getElementById('rating_display').textContent = 'Pilih rating di atas';
-        document.getElementById('rating_display').classList.remove('text-yellow-600');
-        document.getElementById('rating_error').classList.add('hidden');
-
-        // Setup rating input
-        setupRatingInput();
-
-        // Show modal
-        document.getElementById('reviewModal').classList.remove('hidden');
-    }
-
-    function closeReviewModal() {
-        document.getElementById('reviewModal').classList.add('hidden');
-    }
-
-    // Validate on submit
-    document.getElementById('reviewForm').addEventListener('submit', function(e) {
-        const selectedRating = document.querySelector('input[name="rating"]:checked');
-        if (!selectedRating) {
-            e.preventDefault();
-            document.getElementById('rating_error').classList.remove('hidden');
-        }
-    });
 </script>
 
 @if(session('success'))

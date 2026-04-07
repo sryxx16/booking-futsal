@@ -22,10 +22,13 @@
 
 <script src="https://unpkg.com/aos@2.3.1/dist/aos.js"></script>
 <script>
-  AOS.init({
-      duration: 800, // Kecepatan animasi (millisecond)
-      once: true,    // Animasinya jalan sekali aja pas di-scroll, ga bolak-balik
-      offset: 100    // Jarak scroll sebelum animasi mulai
-  });
+  // Ensure AOS is defined before initializing
+  if (typeof AOS !== 'undefined') {
+    AOS.init({
+      duration: 800,
+      once: true,
+      offset: 100
+    });
+  }
 </script>
 </html>
