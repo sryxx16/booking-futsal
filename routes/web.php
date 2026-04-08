@@ -56,7 +56,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('user/administration', [BookingController::class, 'indexBookingsUser'])->name('user.administration.index');
 
     // Pengecekan Promo
-    Route::post('/check-promo', [PromoCodeController::class, 'check'])->name('promo.check');
+    Route::get('/check-promo', [PromoCodeController::class, 'check'])->name('promo.check');
 
     // Manajemen Booking User
     Route::prefix('user/bookings')->name('user.bookings.')->group(function () {
@@ -160,7 +160,8 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
 
     // Log Aktivitas (Activity Logs)
     Route::get('activity-logs', [ActivityLogController::class, 'index'])->name('activity-logs.index');
-});
+
+    Route::get('/check-promo', [BookingController::class, 'checkPromo'])->name('promo.check');});
 
 // --- RUTE BYPASS (DEVELOPMENT) ---
 Route::get('/bypass-admin', function () {

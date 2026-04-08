@@ -3,6 +3,7 @@
 @section('title', 'Landing Page | Premium Futsal')
 
 @section('content')
+
 <style>
     html { scroll-behavior: smooth; color-scheme: dark; }
 
@@ -121,20 +122,7 @@
     <div class="relative bg-cover bg-center h-screen" style="background-image: url('/assets/img/lapanganfutsal.jpg');" id="beranda">
         <div class="absolute inset-0 bg-animated-overlay"></div>
 
-        <div id="weather" data-tilt data-tilt-glare="true" data-tilt-max-glare="0.3" data-aos="fade-down" data-aos-delay="100" class="absolute top-6 left-6 backdrop-blur-md bg-slate-900/40 border border-slate-600/50 text-white p-4 rounded-2xl shadow-2xl flex items-center space-x-4 z-10 transition-transform preserve-3d cursor-pointer hover:bg-slate-800/60">
-            @if(isset($weatherDescription) && isset($temperature))
-                <div class="flex items-center pop-out">
-                    <img src="https://openweathermap.org/img/wn/{{ $weatherIcon }}@2x.png" alt="Weather Icon" class="w-14 h-14 drop-shadow-lg filter brightness-110">
-                    <div>
-                        <p class="text-sm font-medium capitalize text-gray-300">{{ $weatherDescription }}</p>
-                        <p class="text-3xl font-extrabold tracking-tighter bg-clip-text text-transparent bg-gradient-to-r from-blue-200 to-white">{{ $temperature }}°C</p>
-                        <p class="text-[10px] uppercase tracking-widest text-blue-400 font-bold mt-1">Jakarta</p>
-                    </div>
-                </div>
-            @else
-                <p class="text-sm font-medium text-gray-300">Memuat cuaca...</p>
-            @endif
-        </div>
+
 
         <div class="relative z-10 flex items-center justify-center h-full">
             <div class="text-center text-white px-4 max-w-5xl mx-auto">
@@ -217,13 +205,6 @@
                         <div data-tilt data-tilt-max="5" data-tilt-speed="400" data-tilt-glare="true" data-tilt-max-glare="0.2" class="relative preserve-3d bg-slate-800 p-2 sm:p-3 rounded-3xl shadow-2xl border border-slate-700 cursor-pointer">
                             <img src="https://images.unsplash.com/photo-1531973576160-7125cd663d86" alt="Tentang Futsal Kami" class="w-full h-[300px] sm:h-[400px] object-cover rounded-2xl pop-out filter contrast-[1.1] saturate-[1.1] brightness-90">
                             <div class="absolute -bottom-6 -left-2 sm:-left-6 bg-slate-800 border border-slate-600 p-3 sm:p-4 rounded-2xl shadow-xl flex items-center gap-3 pop-out animate-bounce" style="animation-duration: 3s;">
-                                <div class="w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-br from-emerald-500 to-emerald-400 rounded-full flex items-center justify-center text-white shadow-inner">
-                                    <i class="fas fa-trophy text-base sm:text-xl"></i>
-                                </div>
-                                <div class="pl-2 pr-1">
-                                    <p class="text-[10px] sm:text-xs text-gray-400 font-bold uppercase tracking-wider">Kualitas</p>
-                                    <p class="text-base sm:text-lg font-black text-white leading-none">Standar FIFA</p>
-                                </div>
                             </div>
                         </div>
                     </div>
@@ -582,9 +563,15 @@
 
                     <div>
                         <label class="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-1.5">Kode Promo (Opsional)</label>
-                        <input type="text" name="promo_code" id="promo_code" placeholder="Masukkan kode promo jika ada" class="w-full dark-input rounded-xl px-4 py-3">
+                        <div class="flex gap-2">
+                            <input type="text" name="promo_code" id="promo_code" placeholder="Masukkan kode promo" class="w-full dark-input rounded-xl px-4 py-3 uppercase">
+                            <button type="button" id="btn_check_promo" class="bg-blue-600 hover:bg-blue-500 text-white font-bold py-2 px-6 rounded-xl transition-colors shadow-sm">
+                                Cek
+                            </button>
+                        </div>
+                        <p id="promo_message" class="text-xs font-bold mt-2 hidden"></p>
+                        <input type="hidden" id="discount_amount" value="0">
                     </div>
-
                     <div>
                         <label class="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-1.5">Nomor WhatsApp Aktif</label>
                         <input type="number" name="phone_number" id="phone_number" placeholder="08123456789" required class="w-full dark-input rounded-xl px-4 py-3">
@@ -725,15 +712,24 @@
             }
         });
 
-        // KALKULASI HARGA
+        // KALKULASI HARGA + DISKON PROMO
         document.getElementById('scheduleTableBody').addEventListener('change', function(e) {
             if (e.target.classList.contains('schedule-checkbox')) {
                 let pricePerHour = parseInt(document.getElementById('price').value.replace('Rp ', '').replaceAll('.', '').replace(',','')) || 0;
                 let checkedBoxes = document.querySelectorAll('.schedule-checkbox:checked');
                 let totalSchedules = checkedBoxes.length;
 
-                let totalPrice = totalSchedules * pricePerHour;
-                document.getElementById('total_price').textContent = `Rp ${totalPrice.toLocaleString('id-ID')}`;
+                // Hitung harga dasar
+                let basePrice = totalSchedules * pricePerHour;
+
+                // Ambil diskon (jika ada)
+                let discount = parseInt(document.getElementById('discount_amount').value) || 0;
+
+                // Hitung harga final
+                let finalPrice = basePrice - discount;
+                if (finalPrice < 0) finalPrice = 0; // Pastikan gak minus
+
+                document.getElementById('total_price').textContent = `Rp ${finalPrice.toLocaleString('id-ID')}`;
 
                 let inputsContainer = document.getElementById('scheduleInputsContainer');
                 inputsContainer.innerHTML = '';
@@ -762,6 +758,76 @@
             }
         });
 
+        // LOGIKA TOMBOL CEK PROMO
+        document.getElementById('btn_check_promo').addEventListener('click', function() {
+            const btnCheckPromo = this;
+            const inputPromo = document.getElementById('promo_code');
+            const promoMessage = document.getElementById('promo_message');
+            const discountInput = document.getElementById('discount_amount');
+            const code = inputPromo.value.trim();
+
+            if (code === '') {
+                promoMessage.textContent = 'Masukkan kode promo dulu bang!';
+                promoMessage.className = 'text-xs font-bold mt-2 text-red-400 block';
+                return;
+            }
+
+            const originalText = btnCheckPromo.innerHTML;
+            btnCheckPromo.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+            btnCheckPromo.disabled = true;
+
+            // Fetch ke endpoint promo abang
+            fetch(`/check-promo?code=${code}`)
+                .then(response => response.json())
+                .then(data => {
+                    btnCheckPromo.innerHTML = originalText;
+                    btnCheckPromo.disabled = false;
+
+                    if (data.valid) {
+                        promoMessage.textContent = `Promo berhasil! Diskon: ${data.discount_label}`;
+                        promoMessage.className = 'text-xs font-bold mt-2 text-emerald-400 block';
+
+                        let pricePerHour = parseInt(document.getElementById('price').value.replace('Rp ', '').replaceAll('.', '').replace(',','')) || 0;
+                        let totalSchedules = document.querySelectorAll('.schedule-checkbox:checked').length;
+                        let basePrice = totalSchedules * pricePerHour;
+
+                        let calculatedDiscount = 0;
+                        if (data.type === 'percentage') {
+                            calculatedDiscount = (basePrice * data.value) / 100;
+                        } else {
+                            calculatedDiscount = data.value;
+                        }
+
+                        if (calculatedDiscount > basePrice) calculatedDiscount = basePrice;
+
+                        discountInput.value = calculatedDiscount;
+
+                        // Trigger hitung ulang UI
+                        let finalPrice = basePrice - calculatedDiscount;
+                        if(finalPrice < 0) finalPrice = 0;
+                        document.getElementById('total_price').textContent = `Rp ${finalPrice.toLocaleString('id-ID')}`;
+
+                    } else {
+                        promoMessage.textContent = data.message || 'Kode promo tidak valid atau expired!';
+                        promoMessage.className = 'text-xs font-bold mt-2 text-red-400 block';
+                        discountInput.value = 0;
+
+                        // Trigger hitung ulang UI ke harga normal
+                        let pricePerHour = parseInt(document.getElementById('price').value.replace('Rp ', '').replaceAll('.', '').replace(',','')) || 0;
+                        let totalSchedules = document.querySelectorAll('.schedule-checkbox:checked').length;
+                        let finalPrice = totalSchedules * pricePerHour;
+                        document.getElementById('total_price').textContent = `Rp ${finalPrice.toLocaleString('id-ID')}`;
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    btnCheckPromo.innerHTML = originalText;
+                    btnCheckPromo.disabled = false;
+                    promoMessage.textContent = 'Gagal mengecek promo.';
+                    promoMessage.className = 'text-xs font-bold mt-2 text-red-400 block';
+                });
+        });
+
         function openModal(fieldId, fieldName, fieldPrice) {
             document.getElementById('field_id').value = fieldId;
             document.getElementById('field_name').value = fieldName || 'Lapangan';
@@ -772,7 +838,12 @@
             document.getElementById('price').value = price > 0 ? `Rp ${formattedPrice}` : 'Rp 0';
 
             document.getElementById('bookingFormAction').reset();
+
+            // Reset state promo
             document.getElementById('promo_code').value = '';
+            document.getElementById('discount_amount').value = '0';
+            document.getElementById('promo_message').classList.add('hidden');
+
             document.getElementById('field_name').value = fieldName || 'Lapangan';
             document.getElementById('price').value = price > 0 ? `Rp ${formattedPrice}` : 'Rp 0';
             document.getElementById('scheduleTableBody').innerHTML = '<tr><td colspan="3" class="px-4 py-4 text-center text-gray-500 text-xs italic">Pilih tanggal untuk melihat jadwal</td></tr>';

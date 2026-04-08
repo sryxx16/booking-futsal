@@ -84,10 +84,17 @@ class PromoCodeController extends Controller
             return response()->json(['valid' => false, 'message' => 'Kuota penggunaan promo sudah habis.']);
         }
 
+        // Format discount label untuk tampilan
+        $discountLabel = $promo->type === 'percentage'
+            ? $promo->value . '%'
+            : 'Rp ' . number_format($promo->value, 0, ',', '.');
+
         return response()->json([
             'valid' => true,
             'message' => 'Promo berhasil diterapkan!',
-            'promo' => $promo
+            'type' => $promo->type,
+            'value' => $promo->value,
+            'discount_label' => $discountLabel
         ]);
     }
 }

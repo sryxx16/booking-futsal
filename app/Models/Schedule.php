@@ -18,9 +18,14 @@ class Schedule extends Model
         'is_recurring',
         'date',
     ];
-    
+
     public function field()
     {
         return $this->belongsTo(Field::class);
+    }
+
+    public function bookings()
+    {
+        return $this->belongsToMany(Booking::class, 'booking_schedule')->withTimestamps();
     }
 }

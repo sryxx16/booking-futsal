@@ -3,9 +3,8 @@
 @section('title', 'Riwayat Booking | Futsal')
 
 @section('content')
-@include('components.navbar')
 
-<div class="flex flex-col p-6 bg-gray-50 min-h-screen pt-28">
+<div class="flex flex-col p-6 bg-gray-50 min-h-screen pt-100">
     <div class="flex items-center justify-between mb-6 max-w-7xl mx-auto w-full">
         <h1 class="text-3xl font-bold text-gray-800">Riwayat Booking</h1>
         <a href="{{ url('/#fields') }}" class="inline-flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white font-bold py-2.5 px-6 rounded-xl transition-colors shadow-md">
@@ -28,8 +27,13 @@
                 <div class="mb-3 border-b border-gray-100 pb-3">
                     <h2 class="text-xl font-bold text-gray-800"><i class="fas fa-futbol text-blue-500 mr-2"></i>{{ $booking->field->name }}</h2>
                     <p class="text-sm text-gray-500 mt-2">
-                        <i class="far fa-calendar-alt mr-1"></i> {{ \Carbon\Carbon::parse($booking->schedule->date)->translatedFormat('d F Y') }} <br>
-                        <i class="far fa-clock mr-1"></i> {{ \Carbon\Carbon::parse($booking->schedule->start_time)->format('H:i') }} s/d {{ \Carbon\Carbon::parse($booking->schedule->end_time)->format('H:i') }}
+                        {{-- UBAHAN 1: Ngambil tanggal dari jam pertama yang dipesan --}}
+                        <i class="far fa-calendar-alt mr-1"></i> {{ $booking->schedules->isNotEmpty() ? \Carbon\Carbon::parse($booking->schedules->first()->date)->translatedFormat('d F Y') : '-' }} <br>
+
+                        {{-- UBAHAN 2: Looping untuk nampilin semua jam yang diborong --}}
+                        @foreach($booking->schedules as $jam)
+                            <i class="far fa-clock mr-1"></i> {{ \Carbon\Carbon::parse($jam->start_time)->format('H:i') }} s/d {{ \Carbon\Carbon::parse($jam->end_time)->format('H:i') }}<br>
+                        @endforeach
                     </p>
                 </div>
 
@@ -41,9 +45,33 @@
                     <div class="bg-gray-50 p-2 rounded-lg mt-2 mb-2">
                         <p class="text-gray-800 flex justify-between items-center">
                             <span class="font-bold">Total Harga</span>
-                            <span class="font-black text-blue-600 text-lg">Rp{{ number_format((\Carbon\Carbon::parse($booking->schedule->end_time)->diffInHours(\Carbon\Carbon::parse($booking->schedule->start_time))) * $booking->field->price_per_hour, 0, ',', '.') }}</span>
+                            {{-- UBAHAN 3: Hitung total harga otomatis (Jumlah Jam x Harga per Jam) --}}
+                            <span class="font-black text-blue-600 text-lg">Rp{{ number_format($booking->schedules->count() * $booking->field->price_per_hour, 0, ',', '.') }}</span>
                         </p>
                     </div>
+
+                    {{-- PROMO SECTION --}}
+                    @if($booking->status == 'pending' && (!$booking->payment || $booking->payment->status == 'pending'))
+
+
+                    {{-- Diskon Display --}}
+                    @if($booking->discount_amount && $booking->discount_amount > 0)
+                    <p class="text-gray-600 flex justify-between items-center text-sm">
+                        <span class="font-semibold text-gray-700">Diskon</span>
+                        <span class="text-red-500 font-bold">- Rp{{ number_format($booking->discount_amount, 0, ',', '.') }}</span>
+                    </p>
+                    <div class="bg-green-50 p-2 rounded-lg border border-green-200 mb-2">
+                        <p class="text-gray-800 flex justify-between items-center">
+                            <span class="font-bold">Harga Setelah Diskon</span>
+                            @php
+                                $totalPrice = $booking->schedules->count() * $booking->field->price_per_hour;
+                                $finalPrice = $totalPrice - $booking->discount_amount;
+                            @endphp
+                            <span class="font-black text-green-600 text-lg">Rp{{ number_format($finalPrice, 0, ',', '.') }}</span>
+                        </p>
+                    </div>
+                    @endif
+                    @endif
 
                     <p class="text-gray-600 flex justify-between items-center">
                         <span class="font-semibold text-gray-700">Batas Bayar</span>
@@ -180,7 +208,6 @@
         <form action="" method="POST" id="reviewForm">
             @csrf
 
-            <!-- Rating Input - Simple dan Handal -->
             <div class="mb-8 p-6 rounded-2xl bg-gradient-to-br from-yellow-50 to-amber-50 border-3 border-yellow-300 shadow-inner">
                 <p class="text-center text-sm font-semibold text-gray-700 mb-4">Pilih Rating (1-5)</p>
 
@@ -408,6 +435,83 @@
             '{{ $booking->status }}'
         );
     @endforeach
+
+    /* APPLY PROMO FUNCTION */
+    function applyPromo(bookingId) {
+        const promoCode = document.getElementById('promo_code_' + bookingId).value.trim();
+        const messageEl = document.getElementById('promo_message_' + bookingId);
+
+        if (!promoCode) {
+            messageEl.textContent = '⚠️ Silakan masukkan kode promo';
+            messageEl.className = 'text-xs mt-2 text-red-600 font-semibold';
+            return;
+        }
+
+        // Fetch ke endpoint check promo
+        fetch(`/check-promo?code=${promoCode}`)
+            .then(response => response.json())
+            .then(data => {
+                if (data.valid) {
+                    messageEl.textContent = `✓ Promo berhasil! Diskon: ${data.discount_label}`;
+                    messageEl.className = 'text-xs mt-2 text-green-600 font-semibold';
+
+                    // Update harga di UI
+                    const basePrice = document.querySelector(`[data-booking-id="${bookingId}"]`)?.parentElement?.querySelector('.font-black.text-blue-600');
+                    if (basePrice) {
+                        const basePriceNum = parseInt(basePrice.textContent.replace(/\D/g, ''));
+                        let discount = 0;
+
+                        if (data.type === 'percentage') {
+                            discount = (basePriceNum * data.value) / 100;
+                        } else {
+                            discount = data.value;
+                        }
+
+                        const finalPrice = basePriceNum - discount;
+
+                        // Tampilkan diskon
+                        let discountDisplay = document.querySelector(`#discount_display_${bookingId}`);
+                        if (!discountDisplay) {
+                            discountDisplay = document.createElement('p');
+                            discountDisplay.id = `discount_display_${bookingId}`;
+                            discountDisplay.className = 'text-gray-600 flex justify-between items-center text-sm mb-2';
+                            basePrice.closest('.bg-gray-50').insertAdjacentElement('afterend', discountDisplay);
+                        }
+                        discountDisplay.innerHTML = `
+                            <span class="font-semibold text-gray-700">Diskon</span>
+                            <span class="text-red-500 font-bold">- Rp${discount.toLocaleString('id-ID')}</span>
+                        `;
+
+                        // Tampilkan harga akhir
+                        let finalPriceDisplay = document.querySelector(`#final_price_${bookingId}`);
+                        if (!finalPriceDisplay) {
+                            finalPriceDisplay = document.createElement('div');
+                            finalPriceDisplay.id = `final_price_${bookingId}`;
+                            finalPriceDisplay.className = 'bg-green-50 p-2 rounded-lg border border-green-200 mb-2';
+                            discountDisplay.insertAdjacentElement('afterend', finalPriceDisplay);
+                        }
+                        finalPriceDisplay.innerHTML = `
+                            <p class="text-gray-800 flex justify-between items-center">
+                                <span class="font-bold">Harga Setelah Diskon</span>
+                                <span class="font-black text-green-600 text-lg">Rp${finalPrice.toLocaleString('id-ID')}</span>
+                            </p>
+                        `;
+
+                        // Simpan promo ke session/backend (opsional, bisa ditambah route baru)
+                        // Untuk sekarang, hanya tampilan yang berubah
+                    }
+                } else {
+                    messageEl.textContent = `✗ ${data.message}`;
+                    messageEl.className = 'text-xs mt-2 text-red-600 font-semibold';
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                messageEl.textContent = '✗ Gagal mengecek promo';
+                messageEl.className = 'text-xs mt-2 text-red-600 font-semibold';
+            });
+    }
+
 </script>
 
 @if(session('success'))

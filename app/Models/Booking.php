@@ -32,9 +32,9 @@ class Booking extends Model
         return $this->belongsTo(Field::class);
     }
 
-    public function schedule()
+    public function schedules()
     {
-        return $this->belongsTo(Schedule::class);
+        return $this->belongsToMany(Schedule::class, 'booking_schedule')->withTimestamps();
     }
 
     public function payment()
