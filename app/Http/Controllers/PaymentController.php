@@ -38,14 +38,26 @@ class PaymentController extends Controller
         return $totalPrice < 0 ? 0 : $totalPrice;
     }
 
-    public function index()
+    public function index(Request $request)
     {
-        // Fix relasi ke schedules agar admin bisa lihat detail jamnya juga
-        $payments = Auth::user()->role === 'admin'
-            ? Payment::with('booking.schedules')->get()
-            : Payment::whereHas('booking', function($q) {
+        // Siapkan query dasar
+        $query = Payment::with('booking.schedules');
+
+        // Jika yang login bukan admin, cuma bisa lihat pembayaran sendiri
+        if (Auth::user()->role !== 'admin') {
+            $query->whereHas('booking', function($q) {
                 $q->where('user_id', Auth::id());
-            })->with('booking.schedules')->get();
+            });
+        }
+
+        // LOGIKA FILTER TANGGAL
+        // Kalau admin milih tanggal di kalender, kita saring datanya!
+        if ($request->has('date') && $request->date != '') {
+            $query->whereDate('created_at', $request->date);
+        }
+
+        // Ambil datanya dan urutkan dari yang paling baru
+        $payments = $query->latest()->get();
 
         return view('admin.payments.index', compact('payments'));
     }

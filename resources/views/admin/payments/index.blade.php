@@ -14,13 +14,31 @@
                     <h1 class="text-3xl font-extrabold text-gray-900 tracking-tight">Data Pembayaran</h1>
                     <p class="mt-2 text-sm text-gray-500">Kelola dan verifikasi seluruh transaksi pembayaran pelanggan.</p>
                 </div>
-                </div>
+
+                <form action="{{ route('admin.payments.index') }}" method="GET" class="flex flex-col sm:flex-row items-center gap-3 bg-white p-2 rounded-xl shadow-sm border border-gray-200">
+                    <div class="flex items-center pl-2">
+                        <i class="fas fa-calendar-day text-gray-400 mr-2"></i>
+                        <input type="date" name="date" value="{{ request('date') }}" class="border-none bg-transparent focus:ring-0 text-sm text-gray-700 cursor-pointer" required>
+                    </div>
+                    <div class="flex gap-2 w-full sm:w-auto">
+                        <button type="submit" class="w-full sm:w-auto bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-bold transition-colors shadow-sm">
+                            Cari
+                        </button>
+                        @if(request('date'))
+                            <a href="{{ route('admin.payments.index') }}" class="w-full sm:w-auto bg-gray-100 hover:bg-gray-200 text-gray-600 px-4 py-2 rounded-lg text-sm font-bold transition-colors shadow-sm text-center flex items-center justify-center">
+                                Reset
+                            </a>
+                        @endif
+                    </div>
+                </form>
+            </div>
 
             <div class="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
                 <div class="overflow-x-auto">
                     <table class="min-w-full divide-y divide-gray-200">
                         <thead class="bg-gray-50">
                             <tr>
+                                <th scope="col" class="px-6 py-4 text-center text-xs font-bold text-gray-500 uppercase tracking-wider">Tanggal</th>
                                 <th scope="col" class="px-6 py-4 text-center text-xs font-bold text-gray-500 uppercase tracking-wider">ID Booking</th>
                                 <th scope="col" class="px-6 py-4 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Jumlah (Rp)</th>
                                 <th scope="col" class="px-6 py-4 text-center text-xs font-bold text-gray-500 uppercase tracking-wider">Metode</th>
@@ -32,6 +50,9 @@
                         <tbody class="bg-white divide-y divide-gray-200">
                             @forelse($payments as $payment)
                             <tr class="hover:bg-gray-50 transition-colors text-sm">
+                                <td class="px-6 py-4 whitespace-nowrap text-center text-gray-500 font-medium">
+                                    {{ $payment->created_at->format('d/m/Y') }}
+                                </td>
                                 <td class="px-6 py-4 whitespace-nowrap text-center font-bold text-gray-900">
                                     #{{ $payment->booking_id }}
                                 </td>
@@ -45,7 +66,7 @@
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap text-center">
                                     @if($payment->status == 'paid')
-                                        <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-bold bg-green-100 text-green-800">Lunas (Paid)</span>
+                                        <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-bold bg-green-100 text-green-800">Lunas</span>
                                     @elseif($payment->status == 'pending')
                                         <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-bold bg-yellow-100 text-yellow-800">Menunggu</span>
                                     @elseif($payment->status == 'checked')
@@ -80,9 +101,14 @@
                             </tr>
                             @empty
                             <tr>
-                                <td colspan="6" class="px-6 py-10 text-center">
+                                <td colspan="7" class="px-6 py-10 text-center">
                                     <div class="text-gray-400 mb-3"><i class="fas fa-receipt text-4xl"></i></div>
-                                    <p class="text-gray-500 font-medium text-sm">Belum ada data pembayaran masuk.</p>
+                                    <p class="text-gray-500 font-medium text-sm">
+                                        {{ request('date') ? 'Tidak ada transaksi pembayaran pada tanggal ini.' : 'Belum ada data pembayaran masuk.' }}
+                                    </p>
+                                    @if(request('date'))
+                                        <a href="{{ route('admin.payments.index') }}" class="text-blue-500 hover:underline text-xs mt-2 inline-block">Lihat Semua Data</a>
+                                    @endif
                                 </td>
                             </tr>
                             @endforelse
