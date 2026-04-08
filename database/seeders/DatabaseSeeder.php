@@ -33,5 +33,8 @@ class DatabaseSeeder extends Seeder
 
         // Run Promo Code Seeder
         $this->call(PromoCodeSeeder::class);
+
+        // Run AddOn Seeder
+        $this->call(AddOnSeeder::class);
     }
-}
+    }

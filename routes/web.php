@@ -37,14 +37,17 @@ Route::get('/', function () {
     $weatherData = $weatherController->showWeather();
     $setting = \App\Models\Setting::first() ?? new \App\Models\Setting();
 
+    // Harus ada baris ini!
+    $addOns = \App\Models\AddOn::where('stock', '>', 0)->get();
+
     return view('landing-page.index', array_merge([
         'fields' => $fields,
-        'setting' => $setting
+        'setting' => $setting,
+        'addOns' => $addOns // Harus dilempar!
     ], $weatherData));
 })->name('index');
 
 Route::get('/landing-page', [BookingController::class, 'showLandingPage'])->name('landing-page');
-
 // --- PENGECEKAN PROMO (Bebas diakses dari Landing Page) ---
 // HARUS POST KARENA JAVASCRIPT KITA PAKE METHOD POST!
 Route::post('/check-promo', [BookingController::class, 'checkPromo'])->name('promo.check');

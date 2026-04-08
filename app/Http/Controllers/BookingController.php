@@ -7,17 +7,46 @@ use App\Models\Field;
 use App\Models\Booking;
 use App\Models\Schedule;
 use App\Models\AddOn;
-use App\Models\PromoCode; // <-- Ini udah gw tambahin bang
+use App\Models\PromoCode;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
 class BookingController extends Controller
 {
-    public function index()
+    // --- FUNGSI BARU BIAR HALAMAN DEPAN BISA BACA ADD-ON ---
+    public function showLandingPage()
     {
-        // Menampilkan semua booking (Untuk Admin)
-        $bookings = Booking::with(['user', 'field', 'schedules'])->get();
+        $fields = Field::all();
+        $setting = \App\Models\Setting::first() ?? new \App\Models\Setting();
+
+        $weatherController = app(\App\Http\Controllers\WeatherController::class);
+        $weatherData = $weatherController->showWeather();
+
+        // INI DIA KUNCINYA BIAR ROMPI & SEPATU NONGOL DI POP-UP
+        $addOns = AddOn::where('stock', '>', 0)->get();
+
+        return view('landing-page.index', array_merge([
+            'fields' => $fields,
+            'setting' => $setting,
+            'addOns' => $addOns // Kita lempar datanya ke tampilan depan!
+        ], $weatherData));
+    }
+
+    public function index(Request $request)
+    {
+        // Menampilkan semua booking (Untuk Admin) dengan relasi komplit
+        $query = Booking::with(['user', 'field', 'schedules', 'payment', 'addOns']);
+
+        // LOGIKA FILTER TANGGAL
+        if ($request->has('date') && $request->date != '') {
+            // Filter booking yang punya jadwal di tanggal yang dicari
+            $query->whereHas('schedules', function($q) use ($request) {
+                $q->whereDate('date', $request->date);
+            });
+        }
+
+        $bookings = $query->latest()->get();
         return view('admin.bookings.index', compact('bookings'));
     }
 
@@ -33,7 +62,6 @@ class BookingController extends Controller
 
     public function store(Request $request)
     {
-        // 1. Validasi Inputan User (Ubah schedule_id jadi array schedules)
         $request->validate([
             'field_id' => 'required|exists:fields,id',
             'date' => 'required|date|after_or_equal:today',
@@ -41,63 +69,90 @@ class BookingController extends Controller
             'schedules.*' => 'exists:schedules,id',
             'booking_name' => 'required|string|max:255',
             'phone_number' => 'required|string|max:20',
-            'promo_code' => 'nullable|string|exists:promo_codes,code', // Tambah ini bang
+            'promo_code' => 'nullable|string|exists:promo_codes,code',
+            // Tambahin validasi add_ons
+            'add_ons' => 'nullable|array',
+            'add_ons.*.id' => 'exists:add_ons,id',
+            'add_ons.*.quantity' => 'integer|min:1',
         ], [
             'schedules.required' => 'Lu belum milih jam mainnya bang!',
-            'schedules.min' => 'Minimal pilih 1 jadwal jam tayang.',
             'booking_name.required' => 'Nama tim atau pemesan wajib diisi.',
-            'phone_number.required' => 'Nomor WhatsApp wajib diisi buat dihubungin admin.'
         ]);
 
-        // 2. Cek apakah ada jadwal dalam array yang udah dibooking orang di detik yang sama
-        // (Asumsi sistem Abang: jadwal laku = is_available false)
         $clashingSchedules = Schedule::whereIn('id', $request->schedules)
                                      ->where('is_available', false)
                                      ->exists();
 
         if ($clashingSchedules) {
-            return back()->withErrors(['Wah telat nih! Salah satu jadwal yang dipilih baru saja dibooking orang lain. Silakan pilih jadwal yang lain.']);
+            return back()->withErrors(['Wah telat nih! Salah satu jadwal yang dipilih baru saja dibooking orang lain.']);
         }
 
-        // 3. LOGIKA PROMO: Hitung diskon sebelum simpan booking
-        $discountAmount = 0;
+        // Hitung Harga Lapangan
         $field = Field::find($request->field_id);
-        $totalBasePrice = count($request->schedules) * $field->price_per_hour;
+        $fieldPrice = count($request->schedules) * $field->price_per_hour;
+
+        // Hitung Harga Add-ons
+        $addOnsPrice = 0;
+        if ($request->has('add_ons')) {
+            foreach ($request->add_ons as $addon) {
+                if (isset($addon['id'])) {
+                    $addonModel = \App\Models\AddOn::find($addon['id']);
+                    if($addonModel) {
+                        $addOnsPrice += $addonModel->price * ($addon['quantity'] ?? 1);
+                    }
+                }
+            }
+        }
+
+        // Total sebelum diskon (Lapangan + Fasilitas)
+        $totalBasePrice = $fieldPrice + $addOnsPrice;
+        $discountAmount = 0;
 
         if ($request->promo_code) {
-            // Cari promo code di database
-            $promo = PromoCode::where('code', $request->promo_code)
+            $promo = \App\Models\PromoCode::where('code', $request->promo_code)
                               ->where('is_active', true)
                               ->where('valid_until', '>=', now())
                               ->first();
 
             if ($promo) {
-                // Hitung diskon berdasarkan tipe
                 if ($promo->type === 'percentage') {
                     $discountAmount = ($totalBasePrice * $promo->value) / 100;
                 } else {
                     $discountAmount = $promo->value;
                 }
+                if ($discountAmount > $totalBasePrice) $discountAmount = $totalBasePrice;
             }
         }
 
-
-        // 4. Simpan ke Database (1 Invoice + Diskon)
         $booking = Booking::create([
             'user_id' => Auth::id(),
             'field_id' => $request->field_id,
             'booking_name' => $request->booking_name,
             'phone_number' => $request->phone_number,
             'status' => 'pending',
-            'discount_amount' => $discountAmount, // Simpan diskonnya di sini bang!
+            'discount_amount' => $discountAmount,
             'expired_at' => now()->addHours(2),
         ]);
 
-        // Iket semua jadwal ke pivot table
         $booking->schedules()->attach($request->schedules);
-
-        // Tandai jadwal jadi Booked
         Schedule::whereIn('id', $request->schedules)->update(['is_available' => false]);
+
+        // SIMPAN DATA ADD-ONS KE DATABASE (Pivot Table)
+        if ($request->has('add_ons')) {
+            $addOnsData = [];
+            foreach ($request->add_ons as $addon) {
+                if (isset($addon['id'])) {
+                    $addonModel = \App\Models\AddOn::find($addon['id']);
+                    if($addonModel) {
+                        $addOnsData[$addon['id']] = [
+                            'quantity' => $addon['quantity'] ?? 1,
+                            'price' => $addonModel->price
+                        ];
+                    }
+                }
+            }
+            $booking->addOns()->attach($addOnsData);
+        }
 
         return redirect()->route('user.administration.index')->with('success', 'Booking berhasil diamankan! Silakan segera lakukan pembayaran.');
     }
@@ -168,7 +223,7 @@ class BookingController extends Controller
 
         // Buka kembali semua jadwal sebelum booking dihapus
         foreach ($booking->schedules as $schedule) {
-            $schedule->update(['is_available' => true]); // Bug null date udah diperbaiki
+            $schedule->update(['is_available' => true]);
         }
 
         $booking->delete();
@@ -183,7 +238,7 @@ class BookingController extends Controller
             'date' => 'required|date',
         ]);
 
-        // UBAHAN SAKTI: Pakai whereDate biar lebih aman ngebaca format tanggal apapun dari database
+        // Pakai whereDate biar aman ngebaca format tanggal apapun dari database
         $schedules = Schedule::where('field_id', $validated['field_id'])
                             ->whereDate('date', $validated['date'])
                             ->orderBy('start_time')
@@ -199,7 +254,6 @@ class BookingController extends Controller
 
     public function indexBookingsUser()
     {
-        // Ubah relasi dari 'schedule' menjadi 'schedules'
         $bookings = Booking::with(['field', 'schedules', 'payment'])
                            ->where('user_id', Auth::id())
                            ->latest()
@@ -324,18 +378,16 @@ class BookingController extends Controller
                 ->orderBy('created_at', 'desc')
                 ->get();
 
-    return view('user.administration.index', compact('bookings'));
-}
+        return view('user.administration.index', compact('bookings'));
+    }
 
     // --- FUNGSI CEK PROMO VIA AJAX (VERSI ANTI-BADAI) ---
     public function checkPromo(Request $request)
     {
         try {
-            // Kita cari promonya (tanpa where valid_until dulu biar ga error kalau kolomnya ga ada)
             $promo = \App\Models\PromoCode::where('code', $request->code)->first();
 
             if ($promo) {
-                // Kita cek manual ketersediaannya (Biar aman dari error kolom tidak ditemukan)
                 $isActive = isset($promo->is_active) ? $promo->is_active : true;
 
                 $isValidDate = true;
@@ -369,7 +421,6 @@ class BookingController extends Controller
             ]);
 
         } catch (\Exception $e) {
-            // NAH! Kalau ada error dari Laravel, bakal langsung dikirim ke layar abang
             return response()->json([
                 'valid' => false,
                 'message' => 'Error Sistem: ' . $e->getMessage()

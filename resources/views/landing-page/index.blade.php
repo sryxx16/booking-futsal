@@ -112,6 +112,22 @@
     .animate-scroll-reviews:hover {
         animation-play-state: paused;
     }
+
+    /* Scrollbar Styling untuk Addon List */
+    .sidebar-scroll::-webkit-scrollbar {
+        width: 6px;
+    }
+    .sidebar-scroll::-webkit-scrollbar-track {
+        background: rgba(30, 41, 59, 0.3);
+        border-radius: 10px;
+    }
+    .sidebar-scroll::-webkit-scrollbar-thumb {
+        background: rgba(59, 130, 246, 0.4);
+        border-radius: 10px;
+    }
+    .sidebar-scroll::-webkit-scrollbar-thumb:hover {
+        background: rgba(59, 130, 246, 0.6);
+    }
 </style>
 
 <link href="https://unpkg.com/aos@2.3.1/dist/aos.css" rel="stylesheet">
@@ -499,7 +515,7 @@
         <div class="modal-overlay" onclick="closeModal()"></div>
         <div class="modal-content bg-slate-900 rounded-[2rem] shadow-2xl border border-slate-700 p-8">
             <div class="flex justify-between items-center mb-6">
-                <h2 class="text-2xl font-black text-white">Booking Arena</h2>
+                <h2 class="text-2xl font-black text-white">Booking Lapangan</h2>
                 <button onclick="closeModal()" class="text-gray-400 hover:text-white transition-colors">
                     <i class="fas fa-times text-xl"></i>
                 </button>
@@ -551,6 +567,31 @@
                             </div>
                         </div>
                         <div id="scheduleInputsContainer"></div>
+
+                        <div>
+                        <label class="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-1.5">Fasilitas Tambahan (Opsional)</label>
+                        <div class="space-y-3 max-h-40 overflow-y-auto pr-2 sidebar-scroll bg-slate-800 p-3 rounded-xl border border-slate-700">
+                            @forelse($addOns ?? [] as $addon)
+                                @if($addon->stock > 0)
+                                <div class="flex items-center justify-between bg-slate-900/50 p-3 rounded-lg border border-slate-700/50 hover:border-blue-500/30 transition-colors">
+                                    <div class="flex items-center gap-3">
+                                        <input type="checkbox" name="add_ons[{{ $addon->id }}][id]" value="{{ $addon->id }}" class="addon-checkbox w-4 h-4 text-blue-600 bg-gray-700 border-gray-600 rounded focus:ring-blue-500 cursor-pointer" data-price="{{ $addon->price }}">
+                                        <div>
+                                            <p class="text-sm font-bold text-gray-200">{{ $addon->name }}</p>
+                                            <p class="text-xs text-emerald-400">Rp {{ number_format($addon->price, 0, ',', '.') }} <span class="text-gray-500">(Stok: {{ $addon->stock }})</span></p>
+                                        </div>
+                                    </div>
+                                    <div class="flex items-center gap-2">
+                                        <label class="text-xs text-gray-400">Qty:</label>
+                                        <input type="number" name="add_ons[{{ $addon->id }}][quantity]" min="1" max="{{ $addon->stock }}" value="1" class="addon-qty w-14 dark-input rounded-lg px-2 py-1 text-center text-sm" disabled>
+                                    </div>
+                                </div>
+                                @endif
+                            @empty
+                                <p class="text-xs text-gray-500 italic text-center py-2">Tidak ada fasilitas tambahan saat ini.</p>
+                            @endforelse
+                        </div>
+                    </div>
                     </div>
 
                     <div class="bg-slate-800 p-4 rounded-xl border border-slate-700 flex justify-between items-center">
@@ -794,23 +835,35 @@
             let checkedBoxes = document.querySelectorAll('.schedule-checkbox:checked');
             let totalSchedules = checkedBoxes.length;
 
-            let subtotal = totalSchedules * pricePerHour;
+            // 1. Hitung Harga Lapangan
+            let fieldPrice = totalSchedules * pricePerHour;
+
+            // 2. Hitung Harga Fasilitas Tambahan (Add-ons)
+            let addonsPrice = 0;
+            document.querySelectorAll('.addon-checkbox:checked').forEach(checkbox => {
+                let price = parseInt(checkbox.getAttribute('data-price')) || 0;
+                let qtyInput = checkbox.closest('div.flex.items-center.justify-between').querySelector('.addon-qty');
+                let qty = parseInt(qtyInput.value) || 1;
+                addonsPrice += (price * qty);
+            });
+
+            // 3. Gabung Harga Dasar
+            let subtotal = fieldPrice + addonsPrice;
             let finalTotal = subtotal;
             let discountAmount = 0;
 
-            // Hitung potongan harga jika promo aktif
+            // 4. Potong Diskon Promo (Diskon dihitung dari total harga + addon biar fair)
             if (subtotal > 0 && globalDiscount > 0) {
                 if (globalDiscountType === 'percent' || globalDiscountType === 'percentage') {
                     discountAmount = subtotal * (globalDiscount / 100);
                 } else {
-                    discountAmount = globalDiscount; // Potongan langsung (misal 50.000)
+                    discountAmount = globalDiscount;
                 }
             }
 
             finalTotal = finalTotal - discountAmount;
             if (finalTotal < 0) finalTotal = 0;
 
-            // Tampilkan ke layar (Bikin efek harga dicoret kalau dapet diskon)
             let displayTotal = document.getElementById('total_price');
             if (discountAmount > 0) {
                 displayTotal.innerHTML = `<span class="text-base line-through text-red-400 mr-2 opacity-70">Rp ${subtotal.toLocaleString('id-ID')}</span> <span class="text-emerald-400">Rp ${finalTotal.toLocaleString('id-ID')}</span>`;
@@ -818,6 +871,26 @@
                 displayTotal.innerHTML = `Rp ${finalTotal.toLocaleString('id-ID')}`;
             }
         }
+
+        // TAMBAHIN EVENT LISTENER INI DI BAWAH FUNGSI calculateTotal
+        document.addEventListener('change', function(e) {
+            if (e.target.classList.contains('addon-checkbox')) {
+                let qtyInput = e.target.closest('div.flex.items-center.justify-between').querySelector('.addon-qty');
+                if (e.target.checked) {
+                    qtyInput.disabled = false; // Buka kunci input jumlah
+                } else {
+                    qtyInput.disabled = true;  // Kunci lagi
+                    qtyInput.value = 1;        // Reset ke 1
+                }
+                calculateTotal(); // Update harga live
+            }
+        });
+
+        document.addEventListener('input', function(e) {
+            if (e.target.classList.contains('addon-qty')) {
+                calculateTotal(); // Update harga kalau jumlah (qty) diubah
+            }
+        });
 
         // AJAX Untuk Tombol Cek Promo
         document.getElementById('btn-cek-promo').addEventListener('click', function() {

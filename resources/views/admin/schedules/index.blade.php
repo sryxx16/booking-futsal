@@ -14,9 +14,29 @@
                     <h1 class="text-3xl font-extrabold text-gray-900 tracking-tight">Data Jadwal</h1>
                     <p class="mt-2 text-sm text-gray-500">Daftar waktu penyewaan lapangan yang tersedia.</p>
                 </div>
-                <a href="{{ route('admin.schedules.create') }}" class="inline-flex items-center text-sm font-bold text-white bg-blue-600 hover:bg-blue-700 py-2.5 px-5 rounded-xl shadow-sm transition-colors">
-                    <i class="fas fa-plus mr-2"></i> Tambah Jadwal Baru
-                </a>
+
+                <div class="flex flex-col sm:flex-row gap-3">
+                    <form action="{{ route('admin.schedules.index') }}" method="GET" class="flex flex-col sm:flex-row items-center gap-3 bg-white p-2 rounded-xl shadow-sm border border-gray-200">
+                        <div class="flex items-center pl-2">
+                            <i class="fas fa-calendar-day text-gray-400 mr-2"></i>
+                            <input type="date" name="date" value="{{ request('date') }}" class="border-none bg-transparent focus:ring-0 text-sm text-gray-700 cursor-pointer" required>
+                        </div>
+                        <div class="flex gap-2 w-full sm:w-auto">
+                            <button type="submit" class="w-full sm:w-auto bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-bold transition-colors shadow-sm">
+                                Cari
+                            </button>
+                            @if(request('date'))
+                                <a href="{{ route('admin.schedules.index') }}" class="w-full sm:w-auto bg-gray-100 hover:bg-gray-200 text-gray-600 px-4 py-2 rounded-lg text-sm font-bold transition-colors shadow-sm text-center flex items-center justify-center">
+                                    Reset
+                                </a>
+                            @endif
+                        </div>
+                    </form>
+
+                    <a href="{{ route('admin.schedules.create') }}" class="inline-flex justify-center items-center text-sm font-bold text-white bg-indigo-600 hover:bg-indigo-700 py-3 px-5 rounded-xl shadow-sm transition-colors h-full">
+                        <i class="fas fa-plus mr-2"></i> Tambah Jadwal Baru
+                    </a>
+                </div>
             </div>
 
             <div class="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
@@ -32,7 +52,7 @@
                             </tr>
                         </thead>
                         <tbody class="bg-white divide-y divide-gray-200">
-                            @foreach($schedules as $schedule)
+                            @forelse($schedules as $schedule)
                             <tr class="hover:bg-gray-50 transition-colors text-sm">
                                 <td class="px-5 py-4 whitespace-nowrap font-bold text-gray-900">
                                     {{ $schedule->field->name }}
@@ -87,7 +107,19 @@
                                     </div>
                                 </td>
                             </tr>
-                            @endforeach
+                            @empty
+                            <tr>
+                                <td colspan="5" class="px-6 py-10 text-center">
+                                    <div class="text-gray-400 mb-3"><i class="far fa-calendar-times text-4xl"></i></div>
+                                    <p class="text-gray-500 font-medium text-sm">
+                                        {{ request('date') ? 'Tidak ada jadwal lapangan yang diatur pada tanggal ini.' : 'Belum ada data jadwal yang ditambahkan.' }}
+                                    </p>
+                                    @if(request('date'))
+                                        <a href="{{ route('admin.schedules.index') }}" class="text-blue-500 hover:underline text-xs mt-2 inline-block">Tampilkan Semua Jadwal</a>
+                                    @endif
+                                </td>
+                            </tr>
+                            @endforelse
                         </tbody>
                     </table>
                 </div>

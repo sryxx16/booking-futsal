@@ -8,9 +8,21 @@ use Illuminate\Http\Request;
 
 class ScheduleController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
-        $schedules = Schedule::with('field')->get();
+        // Panggil jadwal beserta relasi ke lapangan
+        $query = Schedule::with('field');
+
+        // Jika admin memilih tanggal dari filter kalender
+        if ($request->has('date') && $request->date != '') {
+            $query->whereDate('date', $request->date);
+        }
+
+        // Urutkan berdasarkan tanggal dan jam biar bacanya gampang
+        $schedules = $query->orderBy('date', 'desc')
+                           ->orderBy('start_time', 'asc')
+                           ->get();
+
         return view('admin.schedules.index', compact('schedules'));
     }
 
