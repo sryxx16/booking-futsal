@@ -32,7 +32,7 @@ class ReviewController extends Controller
         // 4. Simpan ke database (status otomatis is_approved = false)
         Review::create([
             'user_id' => Auth::id(),
-            'field_id' => $booking->schedule->field_id, // Ngambil ID lapangan dari relasi jadwal
+            'field_id' => $booking->field_id, // Langsung dari booking, jangan dari schedule
             'booking_id' => $booking->id,
             'rating' => $request->rating,
             'comment' => $request->comment,

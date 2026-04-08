@@ -3,6 +3,7 @@
 @section('title', 'Landing Page | Premium Futsal')
 
 @section('content')
+
 <style>
     html { scroll-behavior: smooth; color-scheme: dark; }
 
@@ -201,7 +202,6 @@
                         <div data-tilt data-tilt-max="5" data-tilt-speed="400" data-tilt-glare="true" data-tilt-max-glare="0.2" class="relative preserve-3d bg-slate-800 p-2 sm:p-3 rounded-3xl shadow-2xl border border-slate-700 cursor-pointer">
                             <img src="https://images.unsplash.com/photo-1531973576160-7125cd663d86" alt="Tentang Futsal Kami" class="w-full h-[300px] sm:h-[400px] object-cover rounded-2xl pop-out filter contrast-[1.1] saturate-[1.1] brightness-90">
                             <div class="absolute -bottom-6 -left-2 sm:-left-6 bg-slate-800 border border-slate-600 p-3 sm:p-4 rounded-2xl shadow-xl flex items-center gap-3 pop-out animate-bounce" style="animation-duration: 3s;">
-
                             </div>
                         </div>
                     </div>
@@ -358,7 +358,7 @@
         referrerpolicy="no-referrer-when-downgrade"
         class="absolute inset-0 w-full h-full">
     </iframe>
-</div
+</div>
 
             </div>
         </div>
@@ -564,15 +564,16 @@
                     </div>
 
                     <div>
-    <label class="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-1.5">Kode Promo (Opsional)</label>
-    <div class="flex gap-2">
-        <input type="text" name="promo_code" id="promo_code" placeholder="Masukkan kode promo" class="w-full dark-input rounded-xl px-4 py-3">
-        <button type="button" id="btn-cek-promo" class="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-bold py-3 px-5 rounded-xl transition-all shadow-[0_0_15px_rgba(37,99,235,0.3)] shrink-0">
-            Cek
-        </button>
-    </div>
-    <div id="promo-message" class="text-xs mt-2 hidden font-bold"></div>
-</div>
+                        <label class="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-1.5">Kode Promo (Opsional)</label>
+                        <div class="flex gap-2">
+                            <input type="text" name="promo_code" id="promo_code" placeholder="Masukkan kode promo" class="w-full dark-input rounded-xl px-4 py-3">
+                            <button type="button" id="btn-cek-promo" class="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-600 text-white font-bold py-3 px-5 rounded-xl transition-all shadow-[0_0_15px_rgba(37,99,235,0.3)] shrink-0">
+                                Cek
+                            </button>
+                        </div>
+                        <div id="promo-message" class="text-xs mt-2 hidden font-bold"></div>
+                        <input type="hidden" id="discount_amount" name="discount_amount" value="0">
+                    </div>
 
                     <div>
                         <label class="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-1.5">Nomor WhatsApp Aktif</label>
@@ -714,16 +715,17 @@
             }
         });
 
-        // KALKULASI HARGA
-        // KALKULASI HARGA SAAT CHECKBOX DICENTANG (UPDATE)
+        // LOGIKA TOMBOL CEK PROMO
+        // KALKULASI HARGA + DISKON PROMO
         document.getElementById('scheduleTableBody').addEventListener('change', function(e) {
             if (e.target.classList.contains('schedule-checkbox')) {
 
                 calculateTotal(); // PANGGIL FUNGSI INI DULU BIAR HARGA UPDATE OTOMATIS
 
-                // KODE BAWAAN ABANG (Mengumpulkan info jam - JANGAN DIHAPUS, CUKUP TIMPA YANG LAMA)
+                // KODE BAWAAN ABANG (Mengumpulkan info jam)
                 let checkedBoxes = document.querySelectorAll('.schedule-checkbox:checked');
                 let totalSchedules = checkedBoxes.length;
+
                 let inputsContainer = document.getElementById('scheduleInputsContainer');
                 inputsContainer.innerHTML = '';
 
@@ -757,6 +759,8 @@
 
             globalDiscount = 0;
             globalDiscountType = 'fixed';
+
+            // FIX: Panggil id elemen promo dengan benar
             document.getElementById('promo-message').className = 'hidden';
 
             let price = parseFloat(fieldPrice) || 0;
@@ -765,7 +769,11 @@
             document.getElementById('price').value = price > 0 ? `Rp ${formattedPrice}` : 'Rp 0';
 
             document.getElementById('bookingFormAction').reset();
+
+            // Reset state promo
             document.getElementById('promo_code').value = '';
+            document.getElementById('discount_amount').value = '0';
+
             document.getElementById('field_name').value = fieldName || 'Lapangan';
             document.getElementById('price').value = price > 0 ? `Rp ${formattedPrice}` : 'Rp 0';
             document.getElementById('scheduleTableBody').innerHTML = '<tr><td colspan="3" class="px-4 py-4 text-center text-gray-500 text-xs italic">Pilih tanggal untuk melihat jadwal</td></tr>';
@@ -840,30 +848,35 @@
                 },
                 body: JSON.stringify({ code: promoCode, promo_code: promoCode }) // Kirim ganda biar aman
             })
-           .then(response => response.json())
+           .then(response => {
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                return response.json();
+            })
             .then(data => {
                 btn.innerHTML = originalBtnText;
                 btn.disabled = false;
 
-                // Cek data.valid (Sesuai dengan balasan dari PromoCodeController)
                 if (data.valid) {
-                    // Ambil datanya dari bungkus 'promo', nama kolomnya 'value' dan 'type'
+                    // Response dari controller berisi promo object dengan type dan value
                     globalDiscount = data.promo.value;
                     globalDiscountType = data.promo.type;
 
                     msgBox.innerHTML = `✅ ${data.message}`;
                     msgBox.className = 'text-xs mt-2 text-emerald-400 font-bold block';
 
-                    calculateTotal(); // Langsung potong harga di layar!
+                    calculateTotal();
                 } else {
                     globalDiscount = 0;
                     msgBox.innerHTML = `❌ ${data.message}`;
                     msgBox.className = 'text-xs mt-2 text-red-400 font-bold block';
 
-                    calculateTotal(); // Balikin harga ke semula
+                    calculateTotal();
                 }
             })
             .catch(error => {
+                console.error('Promo check error:', error);
                 btn.innerHTML = originalBtnText;
                 btn.disabled = false;
                 msgBox.innerHTML = '❌ Terjadi kesalahan jaringan. Coba lagi.';

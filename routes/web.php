@@ -45,6 +45,10 @@ Route::get('/', function () {
 
 Route::get('/landing-page', [BookingController::class, 'showLandingPage'])->name('landing-page');
 
+// --- PENGECEKAN PROMO (Bebas diakses dari Landing Page) ---
+// HARUS POST KARENA JAVASCRIPT KITA PAKE METHOD POST!
+Route::post('/check-promo', [BookingController::class, 'checkPromo'])->name('promo.check');
+
 
 // ==========================================
 // RUTE USER (PELANGGAN)
@@ -55,9 +59,6 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/dashboard', [BookingController::class, 'indexBookingsUser'])->name('dashboard');
     Route::get('user/administration', [BookingController::class, 'indexBookingsUser'])->name('user.administration.index');
 
-    // Pengecekan Promo
-    Route::post('/check-promo', [PromoCodeController::class, 'check'])->name('promo.check');
-
     // Manajemen Booking User
     Route::prefix('user/bookings')->name('user.bookings.')->group(function () {
         Route::get('/getSchedules', [BookingController::class, 'getSchedules'])->name('getSchedules');
@@ -67,21 +68,18 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::post('/cancel/{bookingId}', [BookingController::class, 'cancel'])->name('cancel');
         Route::post('/cancel/expired/{bookingId}', [BookingController::class, 'cancelExpiredBooking'])->name('cancelExpired');
         Route::post('/{booking}/review', [UserReviewController::class, 'store'])->name('review.store');
-        });
+    });
 
     // Manajemen Pembayaran User
     Route::get('user/payments', [PaymentController::class, 'userPayments'])->name('user.payments.index');
     Route::get('user/payments/create/{bookingId}', [PaymentController::class, 'create'])->name('user.payments.create');
     Route::post('user/payments/store/{bookingId}', [PaymentController::class, 'store'])->name('user.payments.store');
-
-    // NGIRIM ULASAN & RATING (Ini tempat yang bener bang!)
 });
 
 
 // ==========================================
 // RUTE ADMIN
 // ==========================================
-// Pastikan middleware 'auth' juga dipanggil sebelum 'admin' untuk proteksi ganda
 Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(function () {
 
     // Dashboard & Lainnya

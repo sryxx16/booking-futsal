@@ -30,5 +30,8 @@ class DatabaseSeeder extends Seeder
 
         // Run Review Seeder
         $this->call(ReviewSeeder::class);
+
+        // Run Promo Code Seeder
+        $this->call(PromoCodeSeeder::class);
     }
 }

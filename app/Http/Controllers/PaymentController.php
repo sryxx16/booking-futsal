@@ -12,19 +12,16 @@ use Carbon\Carbon;
 class PaymentController extends Controller
 {
     /**
-     * Fungsi bantuan (Helper) untuk menghitung total harga secara akurat
+     * Helper Baru: Menghitung total harga berdasarkan koleksi schedules (Multiple Hours)
      */
     private function calculateGrandTotal(Booking $booking)
     {
-        // 1. Hitung Harga Lapangan (Berdasarkan Durasi)
-        $startTime = Carbon::parse($booking->schedule->start_time);
-        $endTime = Carbon::parse($booking->schedule->end_time);
+        // 1. Hitung Harga Lapangan (Berdasarkan jumlah jam yang dibooking)
+        // Sekarang kita hitung ada berapa banyak jadwal yang terikat (pivot)
+        $totalHours = $booking->schedules->count();
+        $fieldPrice = $booking->field->price_per_hour * $totalHours;
 
-        // Hitung selisih jam (minimal 1 jam)
-        $durationHours = $endTime->diffInHours($startTime) ?: 1;
-        $fieldPrice = $booking->field->price_per_hour * $durationHours;
-
-        // 2. Hitung Harga Fasilitas Tambahan (Add-ons)
+        // 2. Hitung Harga Fasilitas Tambahan (Add-ons) - Kode tetap aman
         $addOnsPrice = 0;
         if ($booking->addOns) {
             foreach ($booking->addOns as $addon) {
@@ -38,22 +35,26 @@ class PaymentController extends Controller
         // 4. Total Akhir
         $totalPrice = ($fieldPrice + $addOnsPrice) - $discount;
 
-        // Pastikan total tidak minus
         return $totalPrice < 0 ? 0 : $totalPrice;
     }
 
     public function index()
     {
-        $payments = Auth::user()->role === 'admin' ? Payment::all() : Payment::where('booking_id', Auth::id())->get();
+        // Fix relasi ke schedules agar admin bisa lihat detail jamnya juga
+        $payments = Auth::user()->role === 'admin'
+            ? Payment::with('booking.schedules')->get()
+            : Payment::whereHas('booking', function($q) {
+                $q->where('user_id', Auth::id());
+            })->with('booking.schedules')->get();
+
         return view('admin.payments.index', compact('payments'));
     }
 
     public function create($bookingId)
     {
-        // Ambil data booking beserta relasinya
-        $booking = Booking::with(['field', 'schedule', 'addOns'])->findOrFail($bookingId);
+        // LOAD schedules (Pake 's'), bukan schedule!
+        $booking = Booking::with(['field', 'schedules', 'addOns'])->findOrFail($bookingId);
 
-        // Gunakan helper untuk menghitung harga asli
         $totalPrice = $this->calculateGrandTotal($booking);
 
         return view('admin.payments.create', compact('booking', 'totalPrice'));
@@ -66,20 +67,19 @@ class PaymentController extends Controller
             'payment_proof' => 'nullable|file|mimes:jpg,jpeg,png,pdf|max:2048',
         ]);
 
-        $booking = Booking::with(['field', 'schedule', 'addOns'])->findOrFail($bookingId);
+        // LOAD schedules (Pake 's')
+        $booking = Booking::with(['field', 'schedules', 'addOns'])->findOrFail($bookingId);
 
-        // Gunakan helper untuk menghitung harga asli saat menyimpan
         $totalPrice = $this->calculateGrandTotal($booking);
 
         $paymentProofPath = null;
         if ($request->hasFile('payment_proof')) {
-            // Parameter 'public' memastikan tersimpan di storage/app/public
             $paymentProofPath = $request->file('payment_proof')->store('payment_proofs', 'public');
         }
 
         $payment = Payment::create([
             'booking_id' => $booking->id,
-            'amount' => $totalPrice, // Nilai yang tersimpan sekarang 100% akurat
+            'amount' => $totalPrice,
             'status' => 'checked',
             'payment_method' => $request->payment_method,
             'payment_proof' => $paymentProofPath,
@@ -96,18 +96,20 @@ class PaymentController extends Controller
 
     public function show(Payment $payment)
     {
+        // Load relasi jam agar bisa tampil di detail pembayaran
+        $payment->load('booking.schedules');
         return view('admin.payments.show', compact('payment'));
     }
 
     public function edit(Payment $payment)
     {
         if (Auth::user()->role !== 'admin' && Auth::id() !== $payment->booking->user_id) {
-            return redirect()->route('admin.payments.index')->with('error', 'Anda tidak memiliki izin untuk mengedit pembayaran ini.');
+            return redirect()->route('admin.payments.index')->with('error', 'Anda tidak memiliki izin.');
         }
         return view('admin.payments.edit', compact('payment'));
     }
 
-   public function update(Request $request, Payment $payment)
+    public function update(Request $request, Payment $payment)
     {
         if (Auth::user()->role !== 'admin') {
             return redirect()->route('admin.payments.index')->with('error', 'Anda tidak memiliki izin.');
@@ -117,7 +119,6 @@ class PaymentController extends Controller
             'status' => 'required|in:pending,paid,failed,checked',
         ]);
 
-        // Simpan status lama buat perbandingan di log
         $oldStatus = $payment->status;
 
         $payment->update([
@@ -130,9 +131,12 @@ class PaymentController extends Controller
             $booking->update(['status' => 'confirmed']);
         } elseif ($request->status === 'failed') {
             $booking->update(['status' => 'canceled']);
+            // Lepas status booked dari jadwal-jadwalnya jika gagal bayar
+            foreach ($booking->schedules as $schedule) {
+                $schedule->update(['is_available' => true]);
+            }
         }
 
-        // CATAT KE LOG AKTIVITAS (Satu baris ini aja bang magic-nya!)
         \App\Models\ActivityLog::record(
             'Verifikasi Pembayaran',
             "Admin mengubah status pembayaran Booking #{$booking->id} dari '{$oldStatus}' menjadi '{$request->status}'"
@@ -144,7 +148,7 @@ class PaymentController extends Controller
     public function destroy(Payment $payment)
     {
         if (Auth::user()->role !== 'admin' && Auth::id() !== $payment->booking->user_id) {
-            return redirect()->route('admin.payments.index')->with('error', 'Anda tidak memiliki izin untuk menghapus pembayaran ini.');
+            return redirect()->route('admin.payments.index')->with('error', 'Izin ditolak.');
         }
 
         if ($payment->payment_proof) {
